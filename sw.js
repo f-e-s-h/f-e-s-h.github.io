@@ -20,6 +20,11 @@ self.addEventListener('fetch', (event) => {
           return fetchRes;
         });
       });
+    }).catch(() => {
+      if (event.request.mode === 'navigate') {
+        return caches.match('/');
+      }
+      return new Response('', { status: 503, statusText: 'Service Unavailable' });
     })
   );
 });
