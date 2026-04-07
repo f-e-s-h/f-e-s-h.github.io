@@ -1,0 +1,1 @@
+﻿const fs = require('fs'); let c = fs.readFileSync('src/App.jsx', 'utf8'); c = c.replace('setResult({ok});', 'setResult({action, ok});'); fs.writeFileSync('src/App.jsx', c); console.log('Fixed setResult!');

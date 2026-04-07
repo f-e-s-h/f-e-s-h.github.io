@@ -1,0 +1,1 @@
+﻿const fs = require('fs'); let c = fs.readFileSync('src/App.jsx', 'utf8'); let m = c.match(/const TABS\s*=\s*\[[\s\S]*?\];/g); if(m && m.length > 1) { for(let i = 1; i < m.length; i++) c = c.replace(m[i], ''); fs.writeFileSync('src/App.jsx', c); console.log('Fixed TABS'); }

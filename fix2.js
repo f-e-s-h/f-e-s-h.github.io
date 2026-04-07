@@ -1,0 +1,1 @@
+﻿const fs = require('fs'); let c = fs.readFileSync('src/App.jsx', 'utf8'); let first = c.indexOf('const TABS ='); let second = c.indexOf('const TABS =', first + 10); if (second !== -1) { let end = c.indexOf('];', second) + 2; fs.writeFileSync('src/App.jsx', c.substring(0, second) + c.substring(end)); console.log('Fixed'); }

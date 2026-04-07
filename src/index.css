@@ -1,0 +1,18 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #06100b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Hide scrollbar for tabs */
+.hide-scroll::-webkit-scrollbar {
+    display: none;
+}
+.hide-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
