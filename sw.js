@@ -1,4 +1,9 @@
 const CACHE_NAME = 'poker-trainer-v1';
+const createServiceUnavailableResponse = () => new Response('Service Unavailable', {
+  status: 503,
+  statusText: 'Service Unavailable',
+  headers: { 'Content-Type': 'text/plain' }
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -23,18 +28,10 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => {
       if (event.request.mode === 'navigate') {
         return caches.match('/').then((response) =>
-          response || new Response('Service Unavailable', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain' }
-          })
+          response || createServiceUnavailableResponse()
         );
       }
-      return new Response('Service Unavailable', {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return createServiceUnavailableResponse();
     })
   );
 });
