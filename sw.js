@@ -1,5 +1,7 @@
 const CACHE_NAME = 'poker-trainer-v1';
-const createServiceUnavailableResponse = () => new Response('Service Unavailable', {
+const createServiceUnavailableResponse = () => new Response(
+  'Unable to reach server. Please check your connection and try again.',
+  {
   status: 503,
   statusText: 'Service Unavailable',
   headers: { 'Content-Type': 'text/plain' }
