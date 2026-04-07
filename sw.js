@@ -22,7 +22,13 @@ self.addEventListener('fetch', (event) => {
       });
     }).catch(() => {
       if (event.request.mode === 'navigate') {
-        return caches.match('/');
+        return caches.match('/').then((response) =>
+          response || new Response('Offline content not available', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' }
+          })
+        );
       }
       return new Response('Service Unavailable', {
         status: 503,
