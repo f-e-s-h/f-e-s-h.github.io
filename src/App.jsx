@@ -313,7 +313,7 @@ function getDecision(tier, pos, situation, raiseAmt){
     }
     if(situation === 'raise_caller'){
       if(g === 'early') return {action: 'fold', why: 'Strong hand but facing a raise + caller from early — too much heat. Fold.'};
-      return {action: 'call', why: 'Strong hand — call with two players. A 3-bet bloats the pot unnecessarily.'};
+      return {action: 'call', why: 'Strong hand — call facing a raise and a caller. A 3-bet can bloat the pot unnecessarily.'};
     }
   }
   if(tier === 'medium'){
