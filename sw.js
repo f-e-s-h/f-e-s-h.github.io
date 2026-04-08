@@ -1,4 +1,11 @@
 const CACHE_NAME = 'poker-trainer-v1';
+const createServiceUnavailableResponse = () => new Response(
+  'Unable to reach server. Please check your connection and try again.',
+  {
+  status: 503,
+  statusText: 'Service Unavailable',
+  headers: { 'Content-Type': 'text/plain' }
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -20,6 +27,13 @@ self.addEventListener('fetch', (event) => {
           return fetchRes;
         });
       });
+    }).catch(() => {
+      if (event.request.mode === 'navigate') {
+        return caches.match('/').then((response) =>
+          response || createServiceUnavailableResponse()
+        );
+      }
+      return createServiceUnavailableResponse();
     })
   );
 });
