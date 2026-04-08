@@ -7,14 +7,17 @@ self.addEventListener('install', (event) => {
       return cache.addAll(['/']);
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) => {
+        const oldCaches = keys.filter((key) => key !== CACHE_NAME);
+        return Promise.all(oldCaches.map((key) => caches.delete(key)));
+      })
+      .then(() => self.clients.claim())
   );
 });
 
