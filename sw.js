@@ -1,4 +1,11 @@
-const CACHE_NAME = 'poker-trainer-v2';
+const CACHE_NAME = 'poker-trainer-v1';
+const createServiceUnavailableResponse = () => new Response(
+  'Unable to reach server. Please check your connection and try again.',
+  {
+  status: 503,
+  statusText: 'Service Unavailable',
+  headers: { 'Content-Type': 'text/plain' }
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -27,26 +34,22 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((fetchRes) => {
-        const responseClone = fetchRes.clone();
-        event.waitUntil(
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).then((fetchRes) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
+            cache.put(event.request, fetchRes.clone());
+          }
+          return fetchRes;
+        });
+      });
+    }).catch(() => {
+      if (event.request.mode === 'navigate') {
+        return caches.match('/').then((response) =>
+          response || createServiceUnavailableResponse()
         );
-        return fetchRes;
-      })
-      .catch(() =>
-        caches.match(event.request).then(
-          (cachedRes) =>
-            cachedRes ||
-            new Response('Unable to reach server. Please check your connection and try again.', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: {
-                'Content-Type': 'text/plain',
-              },
-            })
-        )
-      )
+      }
+      return createServiceUnavailableResponse();
+    })
   );
 });
