@@ -39,6 +39,9 @@ self.addEventListener('fetch', (event) => {
             new Response('Service unavailable.', {
               status: 503,
               statusText: 'Service Unavailable',
+              headers: {
+                'Content-Type': 'text/plain',
+              },
             })
         )
       )
