@@ -39,7 +39,7 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request).then(
           (cachedRes) =>
             cachedRes ||
-            new Response('Service unavailable.', {
+            new Response('Unable to reach server. Please check your connection and try again.', {
               status: 503,
               statusText: 'Service Unavailable',
               headers: {
