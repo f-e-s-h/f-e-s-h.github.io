@@ -1127,6 +1127,14 @@ const AS_TEXTURES = ['dry', 'semi-wet', 'wet', 'paired', 'monotone'];
 const AS_FADE_DELAY_MS = 130;
 const AS_MIN_SAMPLES_FOR_FOCUS_PICK = 3;
 const AS_MIN_SAMPLES_FOR_FOCUS_CUE = 4;
+const AS_VILLAIN_WEIGHT_JITTER_MIN = 0.9;
+const AS_VILLAIN_WEIGHT_JITTER_RANGE = 0.2;
+const AS_ADAPTIVE_ERROR_MULT = 4;
+const AS_ADAPTIVE_MISS_MULT = 0.12;
+const AS_IP_BIAS_THRESHOLD = 0.45;
+const AS_MIN_START_POT_BB = 3;
+const AS_START_POT_RANGE_BB = 5;
+const AS_DEEP_STREET_FOLD_MULT = 0.5;
 let AS_HAND_SEQ = 0;
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
@@ -1174,7 +1182,7 @@ function weightedPickFromEntries(entries){
 
 function allSkillsPickVillainType(){
   const entries = Object.entries(AS_VILLAIN_PROFILES).map(([k, v]) => {
-    const jittered = v.baseWeight * (0.9 + Math.random() * 0.2);
+    const jittered = v.baseWeight * (AS_VILLAIN_WEIGHT_JITTER_MIN + Math.random() * AS_VILLAIN_WEIGHT_JITTER_RANGE);
     return [k, jittered];
   });
   return weightedPickFromEntries(entries) ?? 'lp';
@@ -1186,7 +1194,7 @@ function allSkillsPickFocus(weakness = {}){
   const entries = keys.map(k => {
     const rec = weakness[k];
     const err = 1 - (rec.correct / Math.max(rec.total, 1));
-    const weight = 1 + err * 4 + (rec.misses ?? 0) * 0.12;
+    const weight = 1 + err * AS_ADAPTIVE_ERROR_MULT + (rec.misses ?? 0) * AS_ADAPTIVE_MISS_MULT;
     return [k, weight];
   });
   const key = weightedPickFromEntries(entries);
@@ -1211,9 +1219,9 @@ function createAllSkillsHandMeta(weakness = {}){
   return {
     id: allSkillsNextHandId(),
     villainType,
-    heroPos: Math.random() > 0.45 ? 'ip' : 'oop',
+    heroPos: Math.random() > AS_IP_BIAS_THRESHOLD ? 'ip' : 'oop',
     stackBb: randItem(AS_STACKS),
-    startPotBb: asRound(3 + Math.random() * 5, 10),
+    startPotBb: asRound(AS_MIN_START_POT_BB + Math.random() * AS_START_POT_RANGE_BB, 10),
     targetStreet: allSkillsPickTargetStreet(),
     focus: allSkillsPickFocus(weakness),
     heroCards,
@@ -1225,10 +1233,14 @@ function createAllSkillsHandMeta(weakness = {}){
 }
 
 function allSkillsPickSizing(villain){
+  const smallW = clamp(villain.small + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
+  const mediumW = clamp(villain.medium + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
+  const largeW = clamp(villain.large + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
+  const total = smallW + mediumW + largeW;
   return weightedPickFromEntries([
-    ['small', clamp(villain.small + (Math.random() - 0.5) * 0.08, 0.05, 0.8)],
-    ['medium', clamp(villain.medium + (Math.random() - 0.5) * 0.08, 0.05, 0.8)],
-    ['large', clamp(villain.large + (Math.random() - 0.5) * 0.08, 0.05, 0.8)],
+    ['small', smallW / total],
+    ['medium', mediumW / total],
+    ['large', largeW / total],
   ]);
 }
 
@@ -1449,7 +1461,7 @@ function allSkillsResolve(meta, node, scored){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
     let foldChance = clamp(villain.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.8);
-    if(meta.streetIndex <= meta.targetStreet) foldChance *= 0.5; // bias some hands deeper for turn/river coverage
+    if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT; // bias some hands deeper for turn/river coverage
     if(Math.random() < foldChance){
       nextMeta = {...nextMeta, ended: true};
       text = 'Villain folds to pressure. Hand ends.';
