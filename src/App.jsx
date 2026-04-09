@@ -1438,6 +1438,197 @@ function allSkillsPickPostflopClass(street, focus = null, numPlayers = 2){
   return weightedPickFromEntries(Object.entries(base)) ?? 'marginal';
 }
 
+function allSkillsStraightHigh(ranks){
+  const unique = [...new Set(ranks)].sort((a, b) => a - b);
+  if(unique.includes(14)) unique.unshift(1);
+
+  let best = null;
+  for(let i = 0; i <= unique.length - 5; i++){
+    let straight = true;
+    for(let j = 1; j < 5; j++){
+      if(unique[i + j] !== unique[i] + j){
+        straight = false;
+        break;
+      }
+    }
+    if(straight) best = unique[i] + 4;
+  }
+  return best;
+}
+
+function allSkillsRankFive(cards){
+  const ranks = cards.map(c => c.r);
+  const suits = cards.map(c => c.s);
+  const countMap = {};
+  for(const r of ranks) countMap[r] = (countMap[r] || 0) + 1;
+
+  const groups = Object.entries(countMap)
+    .map(([rank, count]) => ({rank: Number(rank), count}))
+    .sort((a, b) => b.count - a.count || b.rank - a.rank);
+
+  const sortedRanks = [...ranks].sort((a, b) => b - a);
+  const flush = new Set(suits).size === 1;
+  const straightHigh = allSkillsStraightHigh(ranks);
+
+  if(flush && straightHigh != null) return {category: 8, tiebreak: [straightHigh]};
+
+  if(groups[0].count === 4){
+    const kicker = groups.find(g => g.count === 1)?.rank ?? 0;
+    return {category: 7, tiebreak: [groups[0].rank, kicker]};
+  }
+
+  if(groups[0].count === 3 && groups[1]?.count === 2){
+    return {category: 6, tiebreak: [groups[0].rank, groups[1].rank]};
+  }
+
+  if(flush) return {category: 5, tiebreak: sortedRanks};
+  if(straightHigh != null) return {category: 4, tiebreak: [straightHigh]};
+
+  if(groups[0].count === 3){
+    const kickers = groups.filter(g => g.count === 1).map(g => g.rank).sort((a, b) => b - a);
+    return {category: 3, tiebreak: [groups[0].rank, ...kickers]};
+  }
+
+  if(groups[0].count === 2 && groups[1]?.count === 2){
+    const pairRanks = groups.filter(g => g.count === 2).map(g => g.rank).sort((a, b) => b - a);
+    const kicker = groups.find(g => g.count === 1)?.rank ?? 0;
+    return {category: 2, tiebreak: [pairRanks[0], pairRanks[1], kicker]};
+  }
+
+  if(groups[0].count === 2){
+    const kickers = groups.filter(g => g.count === 1).map(g => g.rank).sort((a, b) => b - a);
+    return {category: 1, tiebreak: [groups[0].rank, ...kickers]};
+  }
+
+  return {category: 0, tiebreak: sortedRanks};
+}
+
+function allSkillsCompareRanks(a, b){
+  if(a.category !== b.category) return a.category - b.category;
+  const maxLen = Math.max(a.tiebreak.length, b.tiebreak.length);
+  for(let i = 0; i < maxLen; i++){
+    const av = a.tiebreak[i] ?? 0;
+    const bv = b.tiebreak[i] ?? 0;
+    if(av !== bv) return av - bv;
+  }
+  return 0;
+}
+
+function allSkillsBestFive(cards){
+  if(!Array.isArray(cards) || cards.length < 5) return null;
+
+  let best = null;
+  for(let a = 0; a < cards.length - 4; a++){
+    for(let b = a + 1; b < cards.length - 3; b++){
+      for(let c = b + 1; c < cards.length - 2; c++){
+        for(let d = c + 1; d < cards.length - 1; d++){
+          for(let e = d + 1; e < cards.length; e++){
+            const indices = [a, b, c, d, e];
+            const rank = allSkillsRankFive(indices.map(i => cards[i]));
+            if(!best || allSkillsCompareRanks(rank, best.rank) > 0) best = {rank, indices};
+          }
+        }
+      }
+    }
+  }
+  return best;
+}
+
+function allSkillsDrawProfile(heroCards, boardCards){
+  const drawState = analyzeHand(heroCards, boardCards);
+  if(drawState.hasFlushDraw && drawState.hasOESD) return {type: 'combo_flush_oesd', outs: 15, label: 'Flush draw + OESD'};
+  if(drawState.hasFlushDraw && drawState.hasGutshot) return {type: 'combo_flush_gutshot', outs: 12, label: 'Flush draw + gutshot'};
+  if(drawState.hasFlushDraw) return {type: 'flush_draw', outs: 9, label: 'Flush draw'};
+  if(drawState.hasOESD) return {type: 'oesd', outs: 8, label: 'Open-ended straight draw'};
+  if(drawState.hasGutshot) return {type: 'gutshot', outs: 4, label: 'Gutshot straight draw'};
+  return {type: 'none', outs: 0, label: 'No draw'};
+}
+
+function allSkillsDrawEquityFromOuts(outs, street){
+  if(street === 'flop') return clamp(outs * 4, 1, 65);
+  if(street === 'turn') return clamp(outs * 2, 1, 40);
+  return 0;
+}
+
+function allSkillsEvaluatePostflopCards(heroCards, boardCards, street){
+  if(!Array.isArray(heroCards) || heroCards.length < 2 || !Array.isArray(boardCards) || boardCards.length < 3){
+    return {
+      handClass: 'air',
+      madeHand: 'high-card',
+      drawType: 'none',
+      drawOuts: 0,
+      drawLabel: 'No draw',
+      heroCardsUsed: 0,
+      equity: street === 'river' ? 8 : 14,
+    };
+  }
+
+  const allCards = [...heroCards, ...boardCards];
+  const best = allSkillsBestFive(allCards);
+  const draw = allSkillsDrawProfile(heroCards, boardCards);
+
+  const boardRanks = boardCards.map(c => c.r);
+  const holeRanks = heroCards.map(c => c.r).sort((a, b) => b - a);
+  const boardTop = Math.max(...boardRanks);
+  const pocketPair = heroCards[0].r === heroCards[1].r;
+  const heroPairsBoard = holeRanks.filter(r => boardRanks.includes(r));
+  const category = best?.rank.category ?? 0;
+  const heroCardsUsed = best ? best.indices.filter(i => i < 2).length : 0;
+
+  let handClass = 'air';
+  let madeHand = 'high-card';
+
+  if(category >= 5){
+    handClass = heroCardsUsed === 0 ? 'strong' : 'monster';
+    madeHand = category === 8 ? 'straight-flush' : category === 7 ? 'quads' : category === 6 ? 'full-house' : 'flush';
+  } else if(category === 4){
+    handClass = heroCardsUsed === 0 ? 'strong' : 'monster';
+    madeHand = 'straight';
+  } else if(category === 3){
+    const tripRank = best?.rank.tiebreak[0] ?? 0;
+    const boardTrips = boardCards.filter(c => c.r === tripRank).length >= 3;
+    handClass = boardTrips ? (heroCardsUsed === 0 ? 'marginal' : 'strong') : 'monster';
+    madeHand = 'trips';
+  } else if(category === 2){
+    const pairRanks = best?.rank.tiebreak.slice(0, 2) ?? [];
+    const heroContrib = heroCards.some(c => pairRanks.includes(c.r));
+    handClass = heroContrib ? 'strong' : 'marginal';
+    madeHand = 'two-pair';
+  } else if(category === 1){
+    const pairRank = best?.rank.tiebreak[0] ?? 0;
+    const overpair = pocketPair && holeRanks[0] === pairRank && pairRank > boardTop;
+    const topPair = heroPairsBoard.includes(boardTop) && pairRank === boardTop;
+    const kicker = holeRanks.find(r => r !== pairRank) ?? holeRanks[0];
+    handClass = (overpair || (topPair && kicker >= 10)) ? 'strong' : 'marginal';
+    madeHand = overpair ? 'overpair' : topPair ? 'top-pair' : 'pair';
+  } else if(draw.outs > 0 && street !== 'river'){
+    handClass = 'draw';
+    madeHand = 'draw';
+  }
+
+  let equity = 0;
+  if(handClass === 'monster') equity = street === 'river' ? 86 : 76;
+  else if(handClass === 'strong') equity = street === 'river' ? 68 : 58;
+  else if(handClass === 'marginal') equity = street === 'river' ? 30 : 36;
+  else if(handClass === 'draw') equity = allSkillsDrawEquityFromOuts(draw.outs, street);
+  else equity = street === 'river' ? 8 : 14;
+
+  if(handClass !== 'draw' && draw.outs > 0){
+    const bonus = street === 'flop' ? Math.min(draw.outs, 12) * 0.4 : street === 'turn' ? Math.min(draw.outs, 12) * 0.25 : 0;
+    equity += bonus;
+  }
+
+  return {
+    handClass,
+    madeHand,
+    drawType: draw.type,
+    drawOuts: draw.outs,
+    drawLabel: draw.label,
+    heroCardsUsed,
+    equity: Math.round(clamp(equity, 1, 95)),
+  };
+}
+
 function allSkillsMatchTierFromCards(heroCards){
   if(!Array.isArray(heroCards) || heroCards.length < 2) return null;
   const c1 = heroCards[0];
@@ -1507,7 +1698,8 @@ function allSkillsTightenTier(tier, numPlayers){
 
 function allSkillsEstimateEquity(node){
   let equity = 0;
-  if(node.handClass === 'monster') equity = 84;
+  if(node.postflopEval && node.street !== 'preflop') equity = node.postflopEval.equity;
+  else if(node.handClass === 'monster') equity = 84;
   else if(node.handClass === 'strong') equity = node.street === 'river' ? 68 : 62;
   else if(node.handClass === 'marginal') equity = node.street === 'river' ? 30 : 36;
   else if(node.handClass === 'draw') equity = node.street === 'flop' ? 32 : node.street === 'turn' ? 18 : 8;
@@ -1560,6 +1752,7 @@ function allSkillsBuildNode(meta){
   const boardCount = street === 'preflop' ? 0 : street === 'flop' ? 3 : street === 'turn' ? 4 : 5;
   const boardNow = meta.boardCards.slice(0, boardCount);
   const boardTexture = street === 'preflop' ? 'n/a' : allSkillsBoardTexture(boardNow);
+  const postflopEval = street === 'preflop' ? null : allSkillsEvaluatePostflopCards(meta.heroCards, boardNow, street);
   let potBb = asRound(meta.currentPotBb, 10);
   const stackLeftBb = asRound(meta.stackLeftBb, 10);
 
@@ -1593,7 +1786,7 @@ function allSkillsBuildNode(meta){
       options = ['fold', 'call', 'raise-large'];
     }
   } else {
-    handClass = allSkillsPickPostflopClass(street, meta.focus, meta.numPlayers);
+    handClass = postflopEval?.handClass ?? allSkillsPickPostflopClass(street, meta.focus, meta.numPlayers);
     const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(meta.numPlayers - 2, 0) * 0.04, 0.18, 0.9);
     spotType = (focusMatch && meta.focus.spotType && !meta.focus.spotType.startsWith('preflop'))
       ? meta.focus.spotType
@@ -1632,6 +1825,7 @@ function allSkillsBuildNode(meta){
     villainLabel: meta.villainModel.label,
     villainModel: meta.villainModel,
     numPlayers: meta.numPlayers,
+    postflopEval,
   };
 
   if(spotType === 'facing_bet'){
@@ -2022,6 +2216,7 @@ function allSkillsScoreAction(node, action){
 }
 
 function allSkillsActionCommit(node, action){
+  if(typeof action !== 'string' || action.length === 0) return 0;
   if(action === 'fold' || action === 'check') return 0;
   if(action === 'limp') return 1;
 
@@ -2047,6 +2242,7 @@ function allSkillsActionCommit(node, action){
     return asRound(base + node.potBb * pct, 10);
   }
 
+  // Unknown action token should not affect stack/pot progression.
   return 0;
 }
 
@@ -2091,7 +2287,7 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
   const heroCommitRaw = allSkillsActionCommit(node, scored.action);
   const heroCommit = asRound(Math.min(heroCommitRaw, meta.stackLeftBb), 10);
   const nextPot = allSkillsNextPot(node, scored.action, heroCommit);
-  const nextStack = asRound(Math.max(meta.stackLeftBb - heroCommit, 2), 10);
+  const nextStack = asRound(Math.max(meta.stackLeftBb - heroCommit, 0), 10);
 
   if(allSkillsIsAggro(scored.action)){
     const size = allSkillsSizeBucket(scored.action);
@@ -2100,13 +2296,18 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
     if(meta.numPlayers > 2) foldChance *= clamp(1 - (meta.numPlayers - 2) * 0.09, 0.65, 1);
     if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT;
     if(Math.random() < foldChance){
-      nextMeta = {...nextMeta, ended: true};
+      nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
       return {meta: nextMeta, ended: true, fatal: false, text: 'Villain folds to pressure. Hand ends.'};
     }
   }
 
+  if(nextStack <= 0){
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
+    return {meta: nextMeta, ended: true, fatal: false, text: 'Stacks are in. Hand goes to showdown.'};
+  }
+
   if(meta.streetIndex >= 3){
-    nextMeta = {...nextMeta, ended: true};
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
     return {meta: nextMeta, ended: true, fatal: false, text: 'River complete. Hand goes to showdown.'};
   }
 
@@ -2273,6 +2474,7 @@ function AllSkillsTab(){
 
   const act = (action) => {
     if(state.result) return;
+    if(!state.node.options.includes(action)) return;
 
     const scoredBase = allSkillsScoreAction(state.node, action);
     const fatalInfo = allSkillsDetectFatal(state.node, action);
@@ -2367,7 +2569,8 @@ function AllSkillsTab(){
     if(state.node.spotType === 'preflop_open'){
       situationText = `Action folds to you preflop in ${heroSeatInfo?.short ?? heroSeat.toUpperCase()}. ${villainName} is the likely defender from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}.`;
     } else {
-      situationText = `${villainName} opens ${state.node.sizeBucket} to ${state.node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${state.meta.heroPos === 'ip' ? 'IP' : 'OOP'}).`;
+      const callerNote = state.node.preflopSituation === 'raise_caller' ? ' One player has already called the open.' : '';
+      situationText = `${villainName} opens ${state.node.sizeBucket} to ${state.node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${state.meta.heroPos === 'ip' ? 'IP' : 'OOP'}).${callerNote}`;
     }
   } else if(state.node.spotType === 'checked_to_hero'){
     situationText = `${villainName} checks on a ${state.node.boardTexture} board. Pick your continuation action.`;
@@ -2434,6 +2637,11 @@ function AllSkillsTab(){
           {showFacingBetMath && (
             <div style={{fontSize:11,color:'#86a882',marginTop:6,fontFamily:'sans-serif'}}>
               Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}%
+            </div>
+          )}
+          {showFacingBetMath && state.node.postflopEval?.drawOuts > 0 && (
+            <div style={{fontSize:11,color:'#7fa37a',marginTop:4,fontFamily:'sans-serif'}}>
+              Draw profile: {state.node.postflopEval.drawLabel} ({state.node.postflopEval.drawOuts} outs)
             </div>
           )}
           {showExamMathLockedNote && (
