@@ -1160,6 +1160,7 @@ function allSkillsSizeBucket(action){
 }
 
 function weightedPickFromEntries(entries){
+  if(entries.length === 0) return null;
   const safeEntries = entries.map(([k, w]) => [k, Number.isFinite(w) && w > 0 ? w : 0]);
   const total = safeEntries.reduce((s, [, w]) => s + w, 0);
   if(total <= 0) return entries[0]?.[0];
@@ -1176,7 +1177,7 @@ function allSkillsPickVillainType(){
     const jittered = v.baseWeight * (0.9 + Math.random() * 0.2);
     return [k, jittered];
   });
-  return weightedPickFromEntries(entries);
+  return weightedPickFromEntries(entries) ?? 'lp';
 }
 
 function allSkillsPickFocus(weakness = {}){
@@ -1194,7 +1195,12 @@ function allSkillsPickFocus(weakness = {}){
 }
 
 function allSkillsPickTargetStreet(){
-  return weightedPickFromEntries([[1, 0.2], [2, 0.35], [3, 0.45]]);
+  return weightedPickFromEntries([[1, 0.2], [2, 0.35], [3, 0.45]]) ?? 2;
+}
+
+function allSkillsNextHandId(){
+  AS_HAND_SEQ += 1;
+  return `${AS_HAND_SEQ}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function createAllSkillsHandMeta(weakness = {}){
@@ -1203,7 +1209,7 @@ function createAllSkillsHandMeta(weakness = {}){
   const boardCards = deck.splice(0, 5);
   const villainType = allSkillsPickVillainType();
   return {
-    id: `${++AS_HAND_SEQ}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    id: allSkillsNextHandId(),
     villainType,
     heroPos: Math.random() > 0.45 ? 'ip' : 'oop',
     stackBb: randItem(AS_STACKS),
@@ -1443,7 +1449,7 @@ function allSkillsResolve(meta, node, scored){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
     let foldChance = clamp(villain.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.8);
-    if(meta.streetIndex <= meta.targetStreet) foldChance *= 0.5;
+    if(meta.streetIndex <= meta.targetStreet) foldChance *= 0.5; // bias some hands deeper for turn/river coverage
     if(Math.random() < foldChance){
       nextMeta = {...nextMeta, ended: true};
       text = 'Villain folds to pressure. Hand ends.';
@@ -1551,7 +1557,7 @@ function AllSkillsTab(){
     if(state.node.spotType === 'preflop_open'){
       situationText = `Action folds to you preflop against a ${villainName} in ${state.meta.heroPos === 'ip' ? 'late position' : 'early/blind context'}.`;
     }else{
-      situationText = `${villainName} opens preflop (${state.node.sizeBucket} sizing). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
+      situationText = `${villainName} opens preflop ${state.node.sizeBucket} (${state.node.betBb}bb). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
     }
   }else if(state.node.spotType === 'checked_to_hero'){
     situationText = `${villainName} checks. You can choose your c-bet frequency/sizing on a ${state.node.boardTexture} board.`;
