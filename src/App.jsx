@@ -886,172 +886,556 @@ function PreflopTab(){
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB: POSTFLOP
 // ═══════════════════════════════════════════════════════════════════════════════
-const PF_SITUATIONS = [
-  {
-    id: 'ip_air_dry', label: 'Air on a Dry Board', texture: 'Dry',
-    action: 'raise', pos: 'btn', vpos: 'bb', num: 2, 
-    holeP: [14, 11], boardP: [13, 7, 2], suitP: [[0,1], [0,2,3]], // AJ on K72r
-    correct: 'bet',
-    why: "Range Advantage: A dry board heavily favors the preflop raiser's range. A small continuation bet here (bluff) takes down the pot often, as the villain usually misses this flop."
-  },
-  {
-    id: 'oop_air_wet', label: 'Air on a Wet Board', texture: 'Wet/Dynamic',
-    action: 'raise', pos: 'utg', vpos: 'btn', num: 2,
-    holeP: [14, 13], boardP: [11, 10, 8], suitP: [[0,1], [0,0,2]], // AK on JT8ss
-    correct: 'check/fold',
-    why: "Disadvantage: You missed completely on a highly coordinated board that hits the preflop caller's range perfectly. C-Betting here burns chips. Give up."
-  },
-  {
-    id: 'oop_draw_wet', label: 'Strong Draw on Wet Board', texture: 'Wet',
-    action: 'raise', pos: 'hj', vpos: 'btn', num: 2,
-    holeP: [12, 11], boardP: [10, 9, 2], suitP: [[0,0], [0,1,2]], // QJss on T92ss (OESD + FD)
-    correct: 'bet',
-    why: "Semi-Bluff / Pot Building: You have massive equity with a combo draw. Betting builds the pot for when you hit, and gives you a second way to win immediately via fold equity."
-  },
-  {
-    id: 'oop_tptk_wet', label: 'Top Pair Top Kicker (Wet)', texture: 'Wet',
-    action: 'raise', pos: 'hj', vpos: 'bb', num: 2,
-    holeP: [14, 13], boardP: [13, 10, 8], suitP: [[0,1], [2,3,0]], // AK on KT8ss
-    correct: 'bet',
-    why: "Value & Protection: You have a very strong hand on a draw-heavy board. Bet for value and to charge opponents who are chasing flush and straight draws."
-  },
-  {
-    id: 'ip_marg_dry', label: 'Marginal Made Hand (Dry)', texture: 'Dry',
-    action: 'raise', pos: 'btn', vpos: 'bb', num: 2,
-    holeP: [9, 8], boardP: [14, 8, 3], suitP: [[0,1], [2,3,0]], // 98 on K83r
-    correct: 'check',
-    why: "Pot Control: You have a middle pair. Betting usually folds out worse hands and gets called by better ones. Checking behind controls the pot size and realizes your equity."
-  },
-  {
-    id: 'oop_monster_dry', label: 'Monster Hand (Dry)', texture: 'Dry',
-    action: 'raise', pos: 'utg', vpos: 'hj', num: 2,
-    holeP: [10, 10], boardP: [10, 6, 2], suitP: [[0,1], [0,2,3]], // TT on T62r
-    correct: 'bet',
-    why: "Value Extraction: You flopped top set. While slowplaying is tempting, betting builds a pot early. You want to start extracting value from all their underpairs and floats immediately."
-  },
-  {
-    id: 'ip_tp_dry', label: 'Top Pair (Dry)', texture: 'Dry',
-    action: 'raise', pos: 'co', vpos: 'bb', num: 2,
-    holeP: [12, 11], boardP: [12, 5, 2], suitP: [[0,1], [2,3,0]], // QJ on Q52r
-    correct: 'bet',
-    why: "Pure Value: Top pair good kicker is easily strong enough to bet for value on a dry board against a wide big blind calling range."
-  }
+const PFV2_STORAGE_VERSION = 'v2';
+const PFV2_STATS_KEY = `poker_postflop_${PFV2_STORAGE_VERSION}_stats`;
+const PFV2_STREAK_KEY = `poker_postflop_${PFV2_STORAGE_VERSION}_streak`;
+const PFV2_BEST_KEY = `poker_postflop_${PFV2_STORAGE_VERSION}_best`;
+const PFV2_WEAKNESS_KEY = `poker_postflop_${PFV2_STORAGE_VERSION}_weakness`;
+
+const PFV2_PLAYER_DISTRIBUTION = [2, 2, 2, 2, 3, 3, 4];
+const PFV2_START_STREET_DISTRIBUTION = [1, 1, 1, 1, 2, 2, 3];
+const PFV2_STACK_DISTRIBUTION = [50, 70, 90, 110, 130];
+
+const PFV2_FAMILIES = [
+  {id: 'flop_cbet_bluff', label: 'Flop C-Bet Bluff', spotType: 'checked_to_hero', skillBucket: 'bluffing', players: [2], handClasses: ['air', 'draw'], streets: [1], priority: 70},
+  {id: 'flop_value_build', label: 'Flop Value & Protection', spotType: 'checked_to_hero', skillBucket: 'value', players: [2, 3, 4], handClasses: ['strong', 'monster'], streets: [1], priority: 80},
+  {id: 'flop_draw_defense', label: 'Flop Draw Defense', spotType: 'facing_bet', skillBucket: 'draw_defense', players: [2, 3, 4], handClasses: ['draw'], streets: [1], priority: 92},
+  {id: 'turn_pressure', label: 'Turn Pressure Spot', spotType: 'checked_to_hero', skillBucket: 'value', players: [2, 3, 4], handClasses: ['air', 'marginal', 'strong', 'monster'], streets: [2], priority: 96},
+  {id: 'river_bluffcatch', label: 'River Bluff-Catcher', spotType: 'facing_bet', skillBucket: 'postflop_defense', players: [2, 3, 4], handClasses: ['marginal', 'strong'], streets: [3], priority: 108},
+  {id: 'multiway_branch', label: 'Multiway Branch Pot', spotType: 'facing_bet', skillBucket: 'postflop_defense', players: [3, 4], handClasses: ['draw', 'marginal', 'strong'], streets: [1, 2], priority: 118},
 ];
 
-function genPostflopScenario(){
-  const base = PF_SITUATIONS[~~(Math.random() * PF_SITUATIONS.length)];
-  const suits = shuffle(['s','h','d','c']);
+function postflopFamilyById(id){
+  return PFV2_FAMILIES.find(f => f.id === id) ?? PFV2_FAMILIES[0];
+}
+
+function postflopFamilyWeight(familyId, weakness = {}){
+  const rec = weakness[familyId];
+  if(!rec || rec.total < 3) return 1.3;
+  const err = 1 - (rec.correct / Math.max(rec.total, 1));
+  return 1 + err * 3 + (rec.misses ?? 0) * 0.12;
+}
+
+function postflopPickFamily(weakness = {}){
+  const entries = PFV2_FAMILIES.map(f => [f.id, postflopFamilyWeight(f.id, weakness)]);
+  const id = weightedPickFromEntries(entries) ?? PFV2_FAMILIES[0].id;
+  return postflopFamilyById(id);
+}
+
+function postflopFamilyRotation(weakness = {}, leadFamilyId = null){
+  const ranked = PFV2_FAMILIES
+    .map(f => ({family: f, weight: postflopFamilyWeight(f.id, weakness)}))
+    .sort((a, b) => {
+      if(b.weight !== a.weight) return b.weight - a.weight;
+      return (b.family.priority ?? 0) - (a.family.priority ?? 0);
+    })
+    .map(r => r.family);
+
+  if(!leadFamilyId) return ranked;
+  const lead = ranked.find(f => f.id === leadFamilyId);
+  if(!lead) return ranked;
+  return [lead, ...ranked.filter(f => f.id !== lead.id)];
+}
+
+function postflopStreetIndex(street){
+  return AS_STREETS.indexOf(street);
+}
+
+function postflopFamilyMatchesNode(node, family){
+  if(!node || !family || node.street === 'preflop') return false;
+  const streetIndex = postflopStreetIndex(node.street);
+  if(streetIndex < 1) return false;
+  if(family.spotType && node.spotType !== family.spotType) return false;
+  if(Array.isArray(family.streets) && family.streets.length > 0 && !family.streets.includes(streetIndex)) return false;
+  if(Array.isArray(family.players) && family.players.length > 0 && !family.players.includes(node.numPlayers)) return false;
+  if(Array.isArray(family.handClasses) && family.handClasses.length > 0 && !family.handClasses.includes(node.handClass)) return false;
+  return true;
+}
+
+function postflopFamilyMatchScore(node, family){
+  const streetIndex = postflopStreetIndex(node?.street ?? '');
+  let score = family.priority ?? 0;
+  if(family.spotType === node?.spotType) score += 12;
+  if(Array.isArray(family.streets) && family.streets.includes(streetIndex)) score += 9;
+  if(Array.isArray(family.players) && family.players.includes(node?.numPlayers)) score += 7;
+  if(Array.isArray(family.handClasses) && family.handClasses.includes(node?.handClass)) score += 5;
+  return score;
+}
+
+function postflopClassifyFamily(node, preferredFamilyId = null){
+  if(!node || node.street === 'preflop'){
+    return {family: null, familyId: null, matched: false, matchCount: 0, matchedIds: []};
+  }
+
+  const matches = PFV2_FAMILIES
+    .filter(f => postflopFamilyMatchesNode(node, f))
+    .sort((a, b) => postflopFamilyMatchScore(node, b) - postflopFamilyMatchScore(node, a));
+
+  if(matches.length === 0){
+    const fallback = preferredFamilyId ? postflopFamilyById(preferredFamilyId) : PFV2_FAMILIES[0];
+    return {family: fallback, familyId: fallback.id, matched: false, matchCount: 0, matchedIds: []};
+  }
+
+  if(preferredFamilyId){
+    const preferred = matches.find(f => f.id === preferredFamilyId);
+    if(preferred){
+      return {family: preferred, familyId: preferred.id, matched: true, matchCount: matches.length, matchedIds: matches.map(f => f.id)};
+    }
+  }
+
+  const family = matches[0];
+  return {family, familyId: family.id, matched: true, matchCount: matches.length, matchedIds: matches.map(f => f.id)};
+}
+
+function postflopPickStartStreet(family){
+  if(Array.isArray(family?.streets) && family.streets.length > 0) return randItem(family.streets);
+  return randItem(PFV2_START_STREET_DISTRIBUTION);
+}
+
+function postflopBuildMetaCandidate(family, startStreetIndex){
+  const deck = makeDeck();
+  const heroCards = deck.splice(0, 2);
+  const boardCards = deck.splice(0, 5);
+  const numPlayers = Array.isArray(family?.players) && family.players.length > 0 ? randItem(family.players) : randItem(PFV2_PLAYER_DISTRIBUTION);
+  const activeOpponents = Math.max(numPlayers - 1, 1);
+  const heroPos = Math.random() > 0.45 ? 'ip' : 'oop';
+  const heroSeat = allSkillsResolvePosition(heroPos);
+  const villainSeat = allSkillsResolveVillainSeat(heroSeat, heroPos);
+  const villainType = allSkillsPickVillainType();
+  const villainModel = allSkillsCreateVillainModel(villainType, numPlayers);
+  const stackBb = randItem(PFV2_STACK_DISTRIBUTION);
+  const startPotBb = asRound(3 + Math.random() * 6, 10);
+  const stageMult = startStreetIndex === 1 ? (1.8 + Math.random() * 0.5) : startStreetIndex === 2 ? (2.7 + Math.random() * 0.6) : (3.6 + Math.random() * 0.8);
+  const currentPotBb = asRound(startPotBb * stageMult * (1 + Math.max(numPlayers - 2, 0) * 0.14), 10);
+  const stackLeftBb = asRound(Math.max(stackBb - currentPotBb * 0.32, 10), 10);
+
   return {
-    ...base,
-    hand: base.holeP.map((r, i) => ({r, s: suits[base.suitP[0][i]]})),
-    flop: base.boardP.map((r, i) => ({r, s: suits[base.suitP[1][i]]})),
+    id: allSkillsNextHandId(),
+    targetFamilyId: family.id,
+    familyId: family.id,
+    familyLabel: family.label,
+    villainType,
+    villainModel,
+    numPlayers,
+    activeOpponents,
+    heroPos,
+    heroSeat,
+    villainSeat,
+    stackBb,
+    stackLeftBb,
+    startPotBb,
+    currentPotBb,
+    startStreetIndex,
+    targetStreet: 3,
+    focus: {
+      key: family.id,
+      street: AS_STREETS[startStreetIndex],
+      spotType: family.spotType,
+      skillBucket: family.skillBucket,
+    },
+    heroCards,
+    boardCards,
+    streetIndex: startStreetIndex,
+    ended: false,
+    history: [],
   };
 }
 
+function postflopCreateState(weakness = {}){
+  const requestedFamily = postflopPickFamily(weakness);
+  const familyQueue = postflopFamilyRotation(weakness, requestedFamily.id);
+  const attemptsPerFamily = 24;
+  const telemetry = {
+    requestedFamilyId: requestedFamily.id,
+    requestedFamilyLabel: requestedFamily.label,
+    attempts: 0,
+    familyAttempts: {},
+    familyMisses: {},
+  };
+  let fallback = null;
+
+  for(const family of familyQueue){
+    for(let i = 0; i < attemptsPerFamily; i++){
+      telemetry.attempts += 1;
+      telemetry.familyAttempts[family.id] = (telemetry.familyAttempts[family.id] ?? 0) + 1;
+
+      const startStreetIndex = postflopPickStartStreet(family);
+      const meta = postflopBuildMetaCandidate(family, startStreetIndex);
+      const node = allSkillsBuildNode(meta);
+      const classified = postflopClassifyFamily(node, family.id);
+
+      if(!fallback) fallback = {meta, node, classified, familyId: family.id};
+
+      const matchedTarget = classified.matched && classified.familyId === family.id;
+      if(!matchedTarget){
+        telemetry.familyMisses[family.id] = (telemetry.familyMisses[family.id] ?? 0) + 1;
+        continue;
+      }
+
+      const resolvedFamily = postflopFamilyById(classified.familyId);
+      return {
+        meta: {
+          ...meta,
+          familyId: resolvedFamily.id,
+          familyLabel: resolvedFamily.label,
+          generation: {
+            ...telemetry,
+            fallbackUsed: resolvedFamily.id !== requestedFamily.id,
+            unresolved: false,
+            resolvedFamilyId: resolvedFamily.id,
+            resolvedFamilyLabel: resolvedFamily.label,
+            matchCount: classified.matchCount,
+          },
+        },
+        node,
+        result: null,
+      };
+    }
+  }
+
+  const fallbackFamilyId = fallback?.classified?.familyId ?? fallback?.familyId ?? requestedFamily.id;
+  const fallbackFamily = postflopFamilyById(fallbackFamilyId);
+  const fallbackMeta = fallback?.meta ?? postflopBuildMetaCandidate(fallbackFamily, postflopPickStartStreet(fallbackFamily));
+  const fallbackNode = fallback?.node ?? allSkillsBuildNode(fallbackMeta);
+  const fallbackClassified = fallback?.classified ?? postflopClassifyFamily(fallbackNode, fallbackFamily.id);
+
+  return {
+    meta: {
+      ...fallbackMeta,
+      familyId: fallbackFamily.id,
+      familyLabel: fallbackFamily.label,
+      generation: {
+        ...telemetry,
+        fallbackUsed: true,
+        unresolved: true,
+        resolvedFamilyId: fallbackClassified.familyId,
+        resolvedFamilyLabel: fallbackClassified.family?.label ?? fallbackFamily.label,
+        matchCount: fallbackClassified.matchCount,
+      },
+    },
+    node: fallbackNode,
+    result: null,
+  };
+}
+
+function postflopActionTheme(action){
+  if(action === 'fold' || action === 'check/fold') return {bg: 'linear-gradient(135deg,#6a2828,#521818)', color: '#e8a0a0'};
+  if(action === 'check') return {bg: 'linear-gradient(135deg,#2a5a6a,#1a4858)', color: '#a0c8e8'};
+  if(action === 'call' || action === 'check/call') return {bg: 'linear-gradient(135deg,#2a5a6a,#1a4858)', color: '#a0c8e8'};
+  if(action.startsWith('raise') || action.startsWith('bet')) return {bg: 'linear-gradient(135deg,#2a6a38,#1a5228)', color: '#a8dea0'};
+  return {bg: 'rgba(0,0,0,0.24)', color: '#8ab880'};
+}
+
+function postflopHistoryText(entry){
+  if(!entry) return '';
+  return `${allSkillsStreetTitle(entry.street)}: ${allSkillsActionLabel(entry.action)} (${entry.isCorrect ? '✓' : '✗'})`;
+}
+
 function PostflopTab(){
-  const [sc, setSc] = useState(() => genPostflopScenario());
-  const [result, setResult] = useState(null);
-  const [stats, setStats] = useLocalStorageState('poker_stats_2', {correct: 0, total: 0});
-  const [streak, setStreak] = useLocalStorageState('poker_streak_2', 0);
-  const [best, setBest] = useLocalStorageState('poker_best_2', 0);
+  const [weakness, setWeakness] = useLocalStorageState(PFV2_WEAKNESS_KEY, {});
+  const [stats, setStats] = useLocalStorageState(PFV2_STATS_KEY, {correct: 0, total: 0, points: 0, hands: 0});
+  const [streak, setStreak] = useLocalStorageState(PFV2_STREAK_KEY, 0);
+  const [best, setBest] = useLocalStorageState(PFV2_BEST_KEY, 0);
   const [fade, setFade] = useState(true);
+  const [state, setState] = useState(() => postflopCreateState(weakness));
+
+  const boardCount = state.meta.streetIndex === 1 ? 3 : state.meta.streetIndex === 2 ? 4 : 5;
+  const boardNow = state.meta.boardCards.slice(0, boardCount);
+  const street = AS_STREETS[state.meta.streetIndex];
+  const summary = state.meta.ended ? allSkillsSummarize(state.meta) : null;
+  const targetFamily = postflopFamilyById(state.meta.targetFamilyId ?? state.meta.familyId);
+  const family = postflopFamilyById(state.node.postflopFamilyId ?? state.meta.familyId);
+  const activeOpponents = Math.max(state.meta.activeOpponents ?? Math.max(state.meta.numPlayers - 1, 1), 1);
+  const streetProgress = [1, 2, 3].map(idx => {
+    const streetLabel = allSkillsStreetTitle(AS_STREETS[idx]);
+    return {
+      idx,
+      streetLabel,
+      reached: state.meta.streetIndex >= idx,
+      current: state.meta.streetIndex === idx,
+      skippedStart: idx < state.meta.startStreetIndex,
+    };
+  });
+  const heroInfo = POS_INFO[state.meta.heroSeat] ?? POS_INFO.btn;
+  const villainInfo = POS_INFO[state.meta.villainSeat] ?? POS_INFO.bb;
 
   const act = (action) => {
-    if(result) return;
-    const ok = action === sc.correct;
-    setResult({action, ok});
-    setStats(s => ({...s, correct: s.correct + (ok ? 1 : 0), total: s.total + 1}));
-    if(ok){
-      const ns = streak + 1;
-      setStreak(ns);
-      if(ns > best) setBest(ns);
-    }else setStreak(0);
+    if(state.result) return;
+    if(!state.node.options.includes(action)) return;
+
+    const scoredBase = allSkillsScoreAction(state.node, action);
+    const fatalInfo = allSkillsDetectFatal(state.node, action);
+    const scored = fatalInfo.isFatal
+      ? {...scoredBase, isCorrect: false, score: 0, reason: `${fatalInfo.message} ${scoredBase.reason}`}
+      : scoredBase;
+
+    const resolved = allSkillsResolve(state.meta, state.node, scored, fatalInfo);
+    const isCorrect = scored.isCorrect && !resolved.fatal;
+    const score = resolved.fatal ? 0 : scored.score;
+
+    setStats(s => ({
+      ...s,
+      correct: s.correct + (isCorrect ? 1 : 0),
+      total: s.total + 1,
+      points: asRound((s.points ?? 0) + score, 100),
+      hands: s.hands + (resolved.ended ? 1 : 0),
+    }));
+
+    setStreak(prev => {
+      const next = isCorrect ? prev + 1 : 0;
+      setBest(b => Math.max(b, next));
+      return next;
+    });
+
+    setWeakness(w => {
+      const key = state.node.postflopFamilyId ?? state.meta.familyId;
+      const cur = w[key] ?? {correct: 0, total: 0, misses: 0};
+      const missDelta = (isCorrect ? 0 : 1) + (resolved.fatal ? 1 : 0);
+      return {...w, [key]: {correct: cur.correct + (isCorrect ? 1 : 0), total: cur.total + 1, misses: cur.misses + missDelta}};
+    });
+
+    setState(s => ({
+      ...s,
+      meta: resolved.meta,
+      result: {
+        ...scored,
+        isCorrect,
+        score,
+        ended: resolved.ended,
+        fatal: resolved.fatal,
+        handText: resolved.text,
+      },
+    }));
   };
 
   const next = () => {
     setFade(false);
     setTimeout(() => {
-      setSc(genPostflopScenario());
-      setResult(null);
+      if(state.meta.ended) setState(postflopCreateState(weakness));
+      else setState(s => {
+        const node = allSkillsBuildNode(s.meta);
+        const liveFamilyId = node.postflopFamilyId ?? s.meta.familyId;
+        const liveFamily = postflopFamilyById(liveFamilyId);
+        return {
+          ...s,
+          meta: {
+            ...s.meta,
+            familyId: liveFamily.id,
+            familyLabel: liveFamily.label,
+            numPlayers: node.numPlayers,
+            activeOpponents: node.activeOpponents,
+          },
+          node,
+          result: null,
+        };
+      });
       setFade(true);
-    }, 150);
+    }, 130);
   };
 
-  const pp = POS_INFO[sc.pos];
-  const vp = POS_INFO[sc.vpos];
-  const options = sc.pos === 'btn' || sc.pos === 'co' 
-    ? [['bet', 'C-BET (ATTACK)', '#a8dea0', 'linear-gradient(135deg,#2a6a38,#1a5228)'], ['check', 'CHECK (POT CONTROL)', '#e8a0a0', 'linear-gradient(135deg,#6a2828,#521818)']]
-    : [['bet', 'C-BET / LEAD', '#a8dea0', 'linear-gradient(135deg,#2a6a38,#1a5228)'], ['check/call', 'CHECK / CALL', '#a0c8e8', 'linear-gradient(135deg,#2a5a6a,#1a4858)'], ['check/fold', 'CHECK / FOLD', '#e8a0a0', 'linear-gradient(135deg,#6a2828,#521818)']];
+  const weakFamilyId = Object.keys(weakness)
+    .filter(k => (weakness[k]?.total ?? 0) >= 3)
+    .sort((a, b) => {
+      const A = weakness[a], B = weakness[b];
+      const eA = 1 - (A.correct / Math.max(A.total, 1));
+      const eB = 1 - (B.correct / Math.max(B.total, 1));
+      return eB - eA;
+    })[0] ?? null;
 
   return (
     <div>
       <StatsBar stats={stats} streak={streak} best={best}/>
+
+      {weakFamilyId && (() => {
+        const rec = weakness[weakFamilyId];
+        const acc = Math.round(rec.correct / Math.max(rec.total, 1) * 100);
+        if(acc >= 85) return null;
+        const weakFamily = postflopFamilyById(weakFamilyId);
+        return (
+          <div style={{marginBottom:12,background:'rgba(180,100,30,0.12)',border:'1px solid rgba(180,120,40,0.3)',borderRadius:10,padding:'8px 14px',display:'flex',alignItems:'center',gap:8,fontFamily:'sans-serif'}}>
+            <span style={{fontSize:14}}>🎯</span>
+            <div>
+              <span style={{fontSize:11,color:'#c89040',letterSpacing:1}}>Focus family: </span>
+              <span style={{fontSize:11,color:'#e0b060',fontWeight:700}}>{weakFamily.label}</span>
+              <span style={{fontSize:11,color:'#8a6030'}}> ({acc}% accuracy)</span>
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{background:'linear-gradient(155deg,#1e4a2e,#143822)',border:'2px solid rgba(90,150,90,0.18)',borderRadius:20,padding:'22px 18px',boxShadow:'0 24px 64px rgba(0,0,0,0.75)',opacity:fade?1:0,transform:fade?'translateY(0)':'translateY(8px)',transition:'opacity 0.18s ease,transform 0.18s ease'}}>
-        <div style={{display:'flex',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:8}}>
+        <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+          <span style={{background:'rgba(90,155,70,0.14)',border:'1px solid rgba(90,155,70,0.38)',color:'#78b060',padding:'4px 11px',borderRadius:20,fontSize:10,letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif'}}>{street}</span>
+          <span style={{background:'rgba(100,100,150,0.15)',border:'1px solid rgba(100,100,180,0.3)',color:'#9090c0',padding:'4px 11px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>👥 {state.meta.numPlayers}-way · {activeOpponents} live</span>
+          <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'4px 11px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Focus: {targetFamily.label}</span>
+          {family.id !== targetFamily.id && (
+            <span style={{background:'rgba(120,100,170,0.15)',border:'1px solid rgba(130,110,190,0.32)',color:'#b8a0dd',padding:'4px 11px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Live node: {family.label}</span>
+          )}
+        </div>
+
+        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:14}}>
+          {streetProgress.map(step => (
+            <span
+              key={`pf-step-${step.idx}`}
+              style={{
+                minWidth:64,
+                textAlign:'center',
+                padding:'4px 8px',
+                borderRadius:8,
+                fontSize:10,
+                letterSpacing:1,
+                textTransform:'uppercase',
+                fontFamily:'sans-serif',
+                border: step.current
+                  ? '1px solid rgba(120,200,120,0.42)'
+                  : step.reached
+                    ? '1px solid rgba(140,170,200,0.38)'
+                    : '1px solid rgba(120,120,120,0.24)',
+                background: step.current
+                  ? 'rgba(70,120,70,0.22)'
+                  : step.reached
+                    ? 'rgba(60,80,110,0.18)'
+                    : 'rgba(0,0,0,0.14)',
+                color: step.current
+                  ? '#9ed09a'
+                  : step.reached
+                    ? '#a8bddd'
+                    : '#688068',
+                opacity: step.skippedStart ? 0.62 : 1,
+              }}
+            >
+              {step.streetLabel}
+            </span>
+          ))}
+        </div>
+
+        {state.meta.generation?.fallbackUsed && (
+          <div style={{marginBottom:14,background:'rgba(140,110,50,0.14)',border:'1px solid rgba(180,140,70,0.3)',borderRadius:10,padding:'8px 12px',fontFamily:'sans-serif'}}>
+            <div style={{fontSize:10,color:'#d8b06a',letterSpacing:1,textTransform:'uppercase',marginBottom:3}}>Scenario guardrail</div>
+            <div style={{fontSize:11,color:'#b89a64',lineHeight:1.45}}>
+              {state.meta.generation.unresolved
+                ? 'Used fallback candidate due repeated strict family mismatches.'
+                : 'Adjusted to a deterministic fallback family to keep scenario and node family aligned.'}
+            </div>
+          </div>
+        )}
+
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:14,gap:10,flexWrap:'wrap'}}>
           <div>
-            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:2}}>Your Pos</div>
-            <div style={{fontSize:16,fontWeight:700,color:pp.color,fontFamily:'Georgia,serif'}}>{pp.name}</div>
+            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:2}}>Hero Seat</div>
+            <div style={{fontSize:16,fontWeight:700,color:heroInfo.color,fontFamily:'Georgia,serif'}}>{heroInfo.name}</div>
           </div>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:2}}>Villain Pos</div>
-            <div style={{fontSize:16,fontWeight:700,color:vp.color,fontFamily:'Georgia,serif'}}>{vp.name}</div>
+            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:2}}>Villain Seat</div>
+            <div style={{fontSize:16,fontWeight:700,color:villainInfo.color,fontFamily:'Georgia,serif'}}>{villainInfo.name}</div>
           </div>
         </div>
 
-        <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:18,borderLeft:'3px solid #507848'}}>
-          <div style={{fontSize:9,color:'#3d6040',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8}}>Situation</div>
-          <div style={{fontSize:14,color:'#c8e8b0',fontFamily:'sans-serif',marginBottom:8}}>
-            You raised preflop. <strong>{vp.name}</strong> called. The pot is heads-up.
+        <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:14,borderLeft:'3px solid #507848'}}>
+          <div style={{fontSize:9,color:'#3d6040',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:6}}>Situation</div>
+          <div style={{fontSize:13,color:'#c8e8b0',fontFamily:'sans-serif',lineHeight:1.6}}>
+            {state.node.spotType === 'checked_to_hero'
+              ? `${state.meta.villainModel.name} checks to you on a ${state.node.boardTexture} ${street} board.`
+              : `${state.meta.villainModel.name} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} ${street} board.`}
           </div>
-          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            <span style={{background:'rgba(90,155,70,0.14)',border:'1px solid rgba(90,155,70,0.38)',color:'#78b060',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{sc.action === 'raise' ? 'You have initiative' : 'PFC'}</span>
-            <span style={{background:'rgba(100,100,150,0.15)',border:'1px solid rgba(100,100,180,0.3)',color:'#9090c0',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{sc.texture} Board</span>
+          <div style={{fontSize:11,color:'#7fa37a',marginTop:8,fontFamily:'sans-serif'}}>Pot: {state.node.potBb}bb · Effective stack: {state.meta.stackLeftBb}bb · Active opponents: {activeOpponents}</div>
+          <div style={{fontSize:11,color:'#7ea181',marginTop:4,fontFamily:'sans-serif'}}>
+            Branch: {activeOpponents > 1 ? 'Multiway line still active. Keep ranges tight.' : 'Heads-up branch. Wider pressure lines are available.'}
           </div>
+          {state.node.spotType === 'facing_bet' && (
+            <div style={{fontSize:11,color:'#86a882',marginTop:4,fontFamily:'sans-serif'}}>
+              Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}%
+            </div>
+          )}
         </div>
 
-        <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:18}}>
+        <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:14,flexWrap:'wrap'}}>
           <div>
-            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Your Hand</div>
-            <div style={{display:'flex',gap:6}}>{sc.hand.map((c,i)=><PlayingCard key={i} r={c.r} s={c.s} hero={true}/>)}</div>
+            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Hero</div>
+            <div style={{display:'flex',gap:6}}>{state.meta.heroCards.map((c,i)=><PlayingCard key={`${state.meta.id}-h-${i}`} r={c.r} s={c.s} hero={true}/>)}</div>
           </div>
           <div>
-            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>The Flop</div>
-            <div style={{display:'flex',gap:6}}>{sc.flop.map((c,i)=><PlayingCard key={i} r={c.r} s={c.s} hero={true}/>)}</div>
+            <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Board</div>
+            <div style={{display:'flex',gap:6}}>{boardNow.map((c,i)=><PlayingCard key={`${state.meta.id}-b-${i}`} r={c.r} s={c.s} hero={false}/>)}</div>
           </div>
         </div>
 
-        {!result ? (
+        {state.meta.history.length > 0 && (
+          <div style={{background:'rgba(0,0,0,0.18)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:10,padding:'10px 10px 8px',marginBottom:14,maxHeight:124,overflowY:'auto'}}>
+            <div style={{fontSize:9,color:'#3d6040',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:6}}>Hand Line</div>
+            {state.meta.history.slice(-3).map((h, i) => (
+              <div key={`${h.street}-${h.action}-${i}`} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,fontSize:11,color:'#8fb486',fontFamily:'sans-serif',lineHeight:1.45,marginBottom:i===2?0:5}}>
+                <span>{postflopHistoryText(h)}</span>
+                <span style={{fontSize:10,color:'#6f8f72',whiteSpace:'nowrap'}}>{h.numPlayers ? `${h.numPlayers}-way` : ''}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!state.result ? (
           <>
-            <div style={{textAlign:'center',fontSize:12,color:'#507848',marginBottom:12,fontFamily:'sans-serif'}}>What do you do?</div>
-            <div style={{display:'flex',gap:8}}>
-              {options.map(([val, label, color, bg]) => (
-                <button key={val} onClick={()=>act(val)} style={{flex:1,padding:'13px 0',borderRadius:10,border:'none',cursor:'pointer',background:bg,color,fontSize:13,fontWeight:700,letterSpacing:1,fontFamily:'sans-serif',boxShadow:'0 4px 14px rgba(0,0,0,0.35)'}}
-                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.96)'}
-                  onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
-                >{label}</button>
-              ))}
+            <div style={{textAlign:'center',fontSize:12,color:'#507848',marginBottom:11,fontFamily:'sans-serif'}}>Choose your action</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(148px,1fr))',gap:8}}>
+              {state.node.options.map(opt => {
+                const theme = postflopActionTheme(opt);
+                return (
+                  <button key={opt} onClick={()=>act(opt)} style={{padding:'14px 12px',minHeight:56,borderRadius:10,border:'1px solid rgba(0,0,0,0.2)',cursor:'pointer',background:theme.bg,color:theme.color,fontFamily:'sans-serif',textAlign:'left',boxShadow:'0 4px 14px rgba(0,0,0,0.35)'}}>
+                    <div style={{fontSize:13,fontWeight:700}}>{allSkillsActionLabel(opt)}</div>
+                    <div style={{fontSize:10,opacity:0.85}}>{allSkillsSizeBucket(opt) ?? 'standard'}</div>
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : (
           <>
-            <div style={{textAlign:'center',padding:'14px',borderRadius:12,marginBottom:14,background:result.ok?'rgba(50,130,50,0.15)':'rgba(160,45,45,0.15)',border:`1px solid ${result.ok?'rgba(50,200,50,0.28)':'rgba(200,50,50,0.28)'}`}}>
-              <div style={{fontSize:26,marginBottom:2}}>{result.ok ? '✓' : '✗'}</div>
-              <div style={{fontSize:16,fontWeight:700,color:result.ok?'#68cc68':'#cc6868',fontFamily:'sans-serif'}}>{result.ok ? 'Correct!' : `Wrong — correct play was ${sc.correct.toUpperCase()}`}</div>
+            <div style={{textAlign:'center',padding:'14px',borderRadius:12,marginBottom:14,background:state.result.fatal?'rgba(180,120,30,0.17)':state.result.isCorrect?'rgba(50,130,50,0.15)':'rgba(160,45,45,0.15)',border:`1px solid ${state.result.fatal?'rgba(200,150,40,0.34)':state.result.isCorrect?'rgba(50,200,50,0.28)':'rgba(200,50,50,0.28)'}`}}>
+              <div style={{fontSize:24,marginBottom:2}}>{state.result.fatal ? '⚠' : state.result.isCorrect ? '✓' : '✗'}</div>
+              <div style={{fontSize:15,fontWeight:700,color:state.result.fatal?'#d9a24a':state.result.isCorrect?'#68cc68':'#cc6868',fontFamily:'sans-serif'}}>
+                {state.result.fatal
+                  ? 'Fatal error — hand score capped'
+                  : state.result.isCorrect
+                    ? 'Correct line'
+                    : `Not optimal — best: ${allSkillsActionLabel(state.result.bestAction)}`}
+              </div>
+              <div style={{fontSize:11,color:'#7fa37a',fontFamily:'sans-serif',marginTop:6}}>Street score: +{state.result.score.toFixed(1)} pts</div>
             </div>
-            <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+
+            <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:12}}>
               <div style={{fontSize:9,color:'#3a6038',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8}}>Why</div>
-              <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6}}>{sc.why}</div>
+              <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6,marginBottom:8}}>{state.result.reason}</div>
+              <div style={{fontSize:10,color:'#70946b',fontFamily:'sans-serif'}}>Skill tag: {state.result.skillTag}</div>
+              {state.node.postflopFamilyId && <div style={{fontSize:10,color:'#88aa84',fontFamily:'sans-serif',marginTop:4}}>Family: {family.label}</div>}
             </div>
-            <button onClick={next} style={{width:'100%',padding:'13px',borderRadius:10,cursor:'pointer',background:'rgba(90,150,80,0.08)',border:'1px solid rgba(90,150,80,0.28)',color:'#78b060',fontSize:14,fontWeight:600,letterSpacing:1,fontFamily:'sans-serif'}}>Next Scenario →</button>
+
+            <div style={{fontSize:12,color:'#6f926b',marginBottom:12,fontFamily:'sans-serif',textAlign:'center'}}>{state.result.handText}</div>
+            <button onClick={next} style={{width:'100%',padding:'13px',borderRadius:10,cursor:'pointer',background:'rgba(90,150,80,0.08)',border:'1px solid rgba(90,150,80,0.28)',color:'#78b060',fontSize:14,fontWeight:600,letterSpacing:1,fontFamily:'sans-serif'}}>{state.result.ended ? 'Next Hand →' : 'Continue →'}</button>
           </>
         )}
       </div>
 
+      {summary && (
+        <div style={{marginTop:16,background:'rgba(0,0,0,0.2)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'12px 16px',fontFamily:'sans-serif'}}>
+          <div style={{fontSize:9,color:'#2e4a2c',letterSpacing:3,textTransform:'uppercase',marginBottom:8}}>Hand Summary</div>
+          <div style={{fontSize:13,color:'#9bc892',marginBottom:8}}>Hand score: <strong style={{color:'#ede0c0'}}>{summary.points.toFixed(1)}</strong> / {summary.maxPoints.toFixed(1)}</div>
+          <div style={{display:'flex',justifyContent:'space-between',gap:8,fontSize:11,color:'#8aaa84',marginBottom:10,flexWrap:'wrap'}}>
+            {[['Flop', summary.streetMarks.flop], ['Turn', summary.streetMarks.turn], ['River', summary.streetMarks.river]].map(([name, mark]) => (
+              <div key={name} style={{display:'flex',alignItems:'center',gap:4}}>
+                <span>{name}</span>
+                <span style={{color:'#ede0c0',fontWeight:700}}>{mark}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'#7fa37a',marginBottom:6}}>Biggest leak this hand: <span style={{color:'#b0d2a6'}}>{summary.biggestLeak}</span></div>
+          <div style={{fontSize:11,color:'#7fa37a'}}>Cue: <span style={{color:'#b0d2a6'}}>{summary.improvementCue}</span></div>
+        </div>
+      )}
+
       <div style={{marginTop:16,background:'rgba(0,0,0,0.2)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'12px 16px',fontFamily:'sans-serif'}}>
-        <div style={{fontSize:9,color:'#2e4a2c',letterSpacing:3,textTransform:'uppercase',marginBottom:9}}>Postflop Heuristics</div>
-        {[['Range Advantage','Bet mostly IP on dry broadway boards.'],['Nut Advantage','Bet big when you hit big on draw-heavy boards.'],['Equity Realization','Check back marginal hands IP to see free cards.'],['Surrendering','Check/Fold air OOP on disconnected/wet boards.']].map(([rule,desc])=>(
+        <div style={{fontSize:9,color:'#2e4a2c',letterSpacing:3,textTransform:'uppercase',marginBottom:9}}>Postflop v2 Heuristics</div>
+        {[['Street planning','Set your plan on flop, then adapt to turn and river changes.'],['Multiway discipline','Bluff less multiway; continue with stronger equity and cleaner blockers.'],['Pressure math','Facing bets: compare discounted equity vs pot odds before defending.'],['Value over ego','On later streets, maximize value from worse hands before forcing hero calls.']].map(([rule,desc])=>(
           <div key={rule} style={{display:'flex',gap:8,fontSize:11,marginBottom:5}}>
-            <span style={{color:'#70a840',fontWeight:600,minWidth:90}}>{rule}</span>
+            <span style={{color:'#70a840',fontWeight:600,minWidth:102}}>{rule}</span>
             <span style={{color:'#3d5038'}}>{desc}</span>
           </div>
         ))}
@@ -1205,6 +1589,14 @@ const AS_DEEP_STREET_FOLD_MULT = 0.45;
 const AS_FATAL_COMMIT_RATIO = 0.45;
 const AS_FATAL_CAP_MULT = 0.4;
 const AS_MULTIWAY_EQUITY_PENALTY = 0.15;
+
+const AS_STORAGE_VERSION = 'v1';
+const AS_WEAKNESS_KEY = 'poker_allskills_weakness';
+const AS_STATS_KEY = 'poker_allskills_stats';
+const AS_STREAK_KEY = 'poker_allskills_streak';
+const AS_BEST_KEY = 'poker_allskills_best';
+const AS_EXAM_KEY = 'poker_allskills_exam';
+const AS_POSTFLOP_FAMILY_WEAKNESS_KEY = `poker_allskills_${AS_STORAGE_VERSION}_postflop_family_weakness`;
 
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
@@ -1746,9 +2138,15 @@ function allSkillsSkillBucket(node){
   return 'postflop_defense';
 }
 
+function postflopFamilyFromNode(node, preferredFamilyId = null){
+  return postflopClassifyFamily(node, preferredFamilyId);
+}
+
 function allSkillsBuildNode(meta){
   const street = AS_STREETS[meta.streetIndex];
   const focusMatch = !!meta.focus && meta.focus.street === street;
+  const activeOpponents = Math.max(meta.activeOpponents ?? Math.max((meta.numPlayers ?? 2) - 1, 1), 1);
+  const numPlayers = activeOpponents + 1;
   const boardCount = street === 'preflop' ? 0 : street === 'flop' ? 3 : street === 'turn' ? 4 : 5;
   const boardNow = meta.boardCards.slice(0, boardCount);
   const boardTexture = street === 'preflop' ? 'n/a' : allSkillsBoardTexture(boardNow);
@@ -1768,26 +2166,26 @@ function allSkillsBuildNode(meta){
   if(street === 'preflop'){
     handClass = allSkillsPickPreflopClass(meta);
     preflopPos = meta.heroSeat;
-    const facingOpenChance = clamp(meta.villainModel.looseness * 0.62 + meta.villainModel.aggression * 0.24 + (meta.heroPos === 'oop' ? 0.1 : 0) + Math.max(meta.numPlayers - 2, 0) * 0.06, 0.15, 0.9);
+    const facingOpenChance = clamp(meta.villainModel.looseness * 0.62 + meta.villainModel.aggression * 0.24 + (meta.heroPos === 'oop' ? 0.1 : 0) + Math.max(numPlayers - 2, 0) * 0.06, 0.15, 0.9);
     spotType = (focusMatch && meta.focus.spotType?.startsWith('preflop')) ? meta.focus.spotType : (Math.random() < facingOpenChance ? 'preflop_facing_open' : 'preflop_open');
     if(spotType === 'preflop_facing_open' && allSkillsSeatsBefore(meta.heroSeat).length === 0) spotType = 'preflop_open';
     if(spotType === 'preflop_open' && allSkillsSeatsAfter(meta.heroSeat).length === 0) spotType = 'preflop_facing_open';
     if(spotType === 'preflop_open'){
       preflopSituation = 'unopened';
-      raiseOpenBb = asRound(2.3 + Math.max(meta.numPlayers - 2, 0) * 0.25, 10);
+      raiseOpenBb = asRound(2.3 + Math.max(numPlayers - 2, 0) * 0.25, 10);
       potBb = 1.5;
       options = ['fold', 'limp', 'raise-small', 'raise-medium'];
     } else {
       sizeBucket = allSkillsPickSizing(meta.villainModel);
-      raiseOpenBb = asRound(2.4 + (sizeBucket === 'small' ? 0.2 : sizeBucket === 'medium' ? 0.9 : 1.6) + Math.max(meta.numPlayers - 2, 0) * 0.35, 10);
+      raiseOpenBb = asRound(2.4 + (sizeBucket === 'small' ? 0.2 : sizeBucket === 'medium' ? 0.9 : 1.6) + Math.max(numPlayers - 2, 0) * 0.35, 10);
       betBb = raiseOpenBb;
-      preflopSituation = meta.numPlayers > 2 ? 'raise_caller' : 'raise';
-      potBb = asRound(1.5 + raiseOpenBb + (meta.numPlayers > 2 ? raiseOpenBb : 0), 10);
+      preflopSituation = numPlayers > 2 ? 'raise_caller' : 'raise';
+      potBb = asRound(1.5 + raiseOpenBb + (numPlayers > 2 ? raiseOpenBb : 0), 10);
       options = ['fold', 'call', 'raise-large'];
     }
   } else {
-    handClass = postflopEval?.handClass ?? allSkillsPickPostflopClass(street, meta.focus, meta.numPlayers);
-    const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(meta.numPlayers - 2, 0) * 0.04, 0.18, 0.9);
+    handClass = postflopEval?.handClass ?? allSkillsPickPostflopClass(street, meta.focus, numPlayers);
+    const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(numPlayers - 2, 0) * 0.04, 0.18, 0.9);
     spotType = (focusMatch && meta.focus.spotType && !meta.focus.spotType.startsWith('preflop'))
       ? meta.focus.spotType
       : (Math.random() < betFreq ? 'facing_bet' : 'checked_to_hero');
@@ -1799,7 +2197,7 @@ function allSkillsBuildNode(meta){
     } else {
       sizeBucket = allSkillsPickSizing(meta.villainModel);
       const pct = sizeBucket === 'small' ? 0.33 : sizeBucket === 'medium' ? 0.58 : 0.86;
-      const pressure = 1 + Math.max(meta.numPlayers - 2, 0) * 0.06;
+      const pressure = 1 + Math.max(numPlayers - 2, 0) * 0.06;
       betBb = asRound(potBb * pct * pressure, 10);
       options = ['fold', 'call', 'raise-small', 'raise-large'];
     }
@@ -1824,7 +2222,8 @@ function allSkillsBuildNode(meta){
     villainType: meta.villainType,
     villainLabel: meta.villainModel.label,
     villainModel: meta.villainModel,
-    numPlayers: meta.numPlayers,
+    numPlayers,
+    activeOpponents,
     postflopEval,
   };
 
@@ -1836,7 +2235,17 @@ function allSkillsBuildNode(meta){
   const baseline = allSkillsBaselineDecision(node);
   const exploit = allSkillsExploitDecision(node, baseline);
   const skillBucket = allSkillsSkillBucket(node);
-  return {...node, baseline, exploit, skillBucket, focusKey: `${street}|${spotType}|${skillBucket}`};
+  const familyClass = postflopFamilyFromNode(node, meta.familyId ?? meta.targetFamilyId ?? meta.focus?.key ?? null);
+  return {
+    ...node,
+    baseline,
+    exploit,
+    skillBucket,
+    postflopFamilyId: familyClass.familyId,
+    postflopFamilyMatched: familyClass.matched,
+    postflopFamilyMatchCount: familyClass.matchCount,
+    focusKey: `${street}|${spotType}|${skillBucket}`,
+  };
 }
 
 function allSkillsMapPreflopDecision(node, decision){
@@ -2257,11 +2666,37 @@ function allSkillsNextPot(node, action, commit){
   return asRound(node.potBb + commit, 10);
 }
 
+function allSkillsActiveOpponents(meta){
+  const raw = Number.isFinite(meta?.activeOpponents)
+    ? meta.activeOpponents
+    : (meta?.numPlayers ?? 2) - 1;
+  return Math.max(1, Math.round(raw));
+}
+
+function allSkillsApplyOpponentAttrition(activeOpponents, chance, minRemaining = 1){
+  if(activeOpponents <= minRemaining) return activeOpponents;
+  let remaining = activeOpponents;
+  const foldChance = clamp(chance, 0.02, 0.92);
+  for(let i = 0; i < activeOpponents; i++){
+    if(remaining <= minRemaining) break;
+    if(Math.random() < foldChance) remaining -= 1;
+  }
+  return clamp(remaining, minRemaining, activeOpponents);
+}
+
+function allSkillsOpponentWord(count){
+  return count === 1 ? 'opponent' : 'opponents';
+}
+
 function allSkillsResolve(meta, node, scored, fatalInfo){
+  const startingOpponents = allSkillsActiveOpponents(meta);
   const entry = {
     street: node.street,
     spotType: node.spotType,
     skillBucket: node.skillBucket,
+    numPlayers: node.numPlayers,
+    activeOpponents: startingOpponents,
+    postflopFamilyId: node.postflopFamilyId ?? null,
     action: scored.action,
     isCorrect: scored.isCorrect,
     score: scored.score,
@@ -2288,6 +2723,8 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
   const heroCommit = asRound(Math.min(heroCommitRaw, meta.stackLeftBb), 10);
   const nextPot = allSkillsNextPot(node, scored.action, heroCommit);
   const nextStack = asRound(Math.max(meta.stackLeftBb - heroCommit, 0), 10);
+  let nextActiveOpponents = startingOpponents;
+  let transitionNote = '';
 
   if(allSkillsIsAggro(scored.action)){
     const size = allSkillsSizeBucket(scored.action);
@@ -2296,23 +2733,59 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
     if(meta.numPlayers > 2) foldChance *= clamp(1 - (meta.numPlayers - 2) * 0.09, 0.65, 1);
     if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT;
     if(Math.random() < foldChance){
-      nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
-      return {meta: nextMeta, ended: true, fatal: false, text: 'Villain folds to pressure. Hand ends.'};
+      if(startingOpponents <= 1){
+        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1};
+        return {meta: nextMeta, ended: true, fatal: false, text: 'Villain folds to pressure. Hand ends.'};
+      }
+
+      const crowdFoldChance = size === 'large' ? 0.56 : size === 'small' ? 0.36 : 0.47;
+      nextActiveOpponents = allSkillsApplyOpponentAttrition(startingOpponents, crowdFoldChance, 0);
+      if(nextActiveOpponents <= 0){
+        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1};
+        return {meta: nextMeta, ended: true, fatal: false, text: 'Your pressure folds out the whole field. Hand ends.'};
+      }
+
+      if(nextActiveOpponents >= startingOpponents) nextActiveOpponents = startingOpponents - 1;
+      const folded = startingOpponents - nextActiveOpponents;
+      transitionNote = `${folded} ${allSkillsOpponentWord(folded)} folded to pressure. ${nextActiveOpponents} ${allSkillsOpponentWord(nextActiveOpponents)} continue.`;
     }
   }
 
+  if(nextActiveOpponents > 1){
+    const attritionChance = node.spotType === 'facing_bet' ? 0.18 : 0.12;
+    const afterAttrition = allSkillsApplyOpponentAttrition(nextActiveOpponents, attritionChance, 1);
+    if(afterAttrition < nextActiveOpponents){
+      const peeled = nextActiveOpponents - afterAttrition;
+      nextActiveOpponents = afterAttrition;
+      const attritionNote = `${peeled} ${allSkillsOpponentWord(peeled)} peeled off this street.`;
+      transitionNote = transitionNote ? `${transitionNote} ${attritionNote}` : attritionNote;
+    }
+  }
+
+  const nextNumPlayers = Math.max(nextActiveOpponents + 1, 2);
+
   if(nextStack <= 0){
-    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers};
     return {meta: nextMeta, ended: true, fatal: false, text: 'Stacks are in. Hand goes to showdown.'};
   }
 
   if(meta.streetIndex >= 3){
-    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack};
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers};
     return {meta: nextMeta, ended: true, fatal: false, text: 'River complete. Hand goes to showdown.'};
   }
 
-  nextMeta = {...nextMeta, streetIndex: meta.streetIndex + 1, currentPotBb: nextPot, stackLeftBb: nextStack};
-  return {meta: nextMeta, ended: false, fatal: false, text: `Villain continues. Proceed to ${allSkillsStreetTitle(AS_STREETS[nextMeta.streetIndex])}.`};
+  nextMeta = {
+    ...nextMeta,
+    streetIndex: meta.streetIndex + 1,
+    currentPotBb: nextPot,
+    stackLeftBb: nextStack,
+    activeOpponents: nextActiveOpponents,
+    numPlayers: nextNumPlayers,
+  };
+  const fieldNote = nextNumPlayers !== node.numPlayers ? `Field now ${nextNumPlayers}-way.` : '';
+  const travelText = `Proceed to ${allSkillsStreetTitle(AS_STREETS[nextMeta.streetIndex])}.`;
+  const text = [transitionNote, fieldNote, travelText].filter(Boolean).join(' ');
+  return {meta: nextMeta, ended: false, fatal: false, text};
 }
 
 function allSkillsSummarize(meta){
@@ -2438,11 +2911,12 @@ function allSkillsBuildCoachTip(weakness = {}){
 }
 
 function AllSkillsTab(){
-  const [weakness, setWeakness] = useLocalStorageState('poker_allskills_weakness', {});
-  const [stats, setStats] = useLocalStorageState('poker_allskills_stats', {correct: 0, total: 0, points: 0, hands: 0});
-  const [streak, setStreak] = useLocalStorageState('poker_allskills_streak', 0);
-  const [best, setBest] = useLocalStorageState('poker_allskills_best', 0);
-  const [examMode, setExamMode] = useLocalStorageState('poker_allskills_exam', false);
+  const [weakness, setWeakness] = useLocalStorageState(AS_WEAKNESS_KEY, {});
+  const [postflopFamilyWeakness, setPostflopFamilyWeakness] = useLocalStorageState(AS_POSTFLOP_FAMILY_WEAKNESS_KEY, {});
+  const [stats, setStats] = useLocalStorageState(AS_STATS_KEY, {correct: 0, total: 0, points: 0, hands: 0});
+  const [streak, setStreak] = useLocalStorageState(AS_STREAK_KEY, 0);
+  const [best, setBest] = useLocalStorageState(AS_BEST_KEY, 0);
+  const [examMode, setExamMode] = useLocalStorageState(AS_EXAM_KEY, false);
   const [fade, setFade] = useState(true);
   const [positionMapOpen, setPositionMapOpen] = useState(false);
   const [showMathHint, setShowMathHint] = useState(true);
@@ -2512,6 +2986,14 @@ function AllSkillsTab(){
       return {...w, [k]: {correct: cur.correct + (isCorrect ? 1 : 0), total: cur.total + 1, misses: cur.misses + missDelta}};
     });
 
+    setPostflopFamilyWeakness(w => {
+      const familyId = state.node.postflopFamilyId;
+      if(!familyId || state.node.street === 'preflop') return w;
+      const cur = w[familyId] ?? {correct: 0, total: 0, misses: 0};
+      const missDelta = (isCorrect ? 0 : 1) + (resolved.fatal ? 1 : 0);
+      return {...w, [familyId]: {correct: cur.correct + (isCorrect ? 1 : 0), total: cur.total + 1, misses: cur.misses + missDelta}};
+    });
+
     setState(s => ({
       ...s,
       meta: resolved.meta,
@@ -2553,6 +3035,19 @@ function AllSkillsTab(){
   const heroPosLabel = isPreflopOpen ? 'First In' : (state.meta.heroPos === 'ip' ? 'IP' : 'OOP');
   const villainRoleLabel = isPreflopOpen ? 'Defender' : 'Villain';
   const villainBadgeLabel = isPreflopOpen ? 'Likely Defender' : 'Villain';
+  const postflopFamily = state.node.postflopFamilyId ? postflopFamilyById(state.node.postflopFamilyId) : null;
+  const weakPostflopFamilyId = Object.keys(postflopFamilyWeakness)
+    .filter(k => (postflopFamilyWeakness[k]?.total ?? 0) >= 4)
+    .sort((a, b) => {
+      const A = postflopFamilyWeakness[a], B = postflopFamilyWeakness[b];
+      const eA = 1 - (A.correct / Math.max(A.total, 1));
+      const eB = 1 - (B.correct / Math.max(B.total, 1));
+      return eB - eA;
+    })[0] ?? null;
+  const weakPostflopFamily = weakPostflopFamilyId ? postflopFamilyById(weakPostflopFamilyId) : null;
+  const weakPostflopFamilyAcc = weakPostflopFamilyId
+    ? Math.round((postflopFamilyWeakness[weakPostflopFamilyId]?.correct ?? 0) / Math.max(postflopFamilyWeakness[weakPostflopFamilyId]?.total ?? 1, 1) * 100)
+    : null;
   const playerText = isPreflopOpen
     ? 'Unopened pot (blinds only). Players behind can still act.'
     : (state.meta.numPlayers === 2 ? 'Heads-up pot' : `${state.meta.numPlayers}-way pot — tighten up here`);
@@ -2596,6 +3091,17 @@ function AllSkillsTab(){
         </div>
       </div>
 
+      {weakPostflopFamily && weakPostflopFamilyAcc !== null && weakPostflopFamilyAcc < 85 && (
+        <div style={{marginBottom:12,background:'rgba(180,100,30,0.12)',border:'1px solid rgba(180,120,40,0.3)',borderRadius:10,padding:'8px 14px',display:'flex',alignItems:'center',gap:8,fontFamily:'sans-serif'}}>
+          <span style={{fontSize:14}}>🎯</span>
+          <div>
+            <span style={{fontSize:11,color:'#c89040',letterSpacing:1}}>Cross-tab family leak: </span>
+            <span style={{fontSize:11,color:'#e0b060',fontWeight:700}}>{weakPostflopFamily.label}</span>
+            <span style={{fontSize:11,color:'#8a6030'}}> ({weakPostflopFamilyAcc}% accuracy)</span>
+          </div>
+        </div>
+      )}
+
       <div style={{background:'linear-gradient(155deg,#1e4a2e,#143822)',border:'2px solid rgba(90,150,90,0.18)',borderRadius:20,padding:'22px 18px',boxShadow:'0 24px 64px rgba(0,0,0,0.75)',opacity:fade?1:0,transform:fade?'translateY(0)':'translateY(8px)',transition:'opacity 0.18s ease,transform 0.18s ease'}}>
         <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14,alignItems:'stretch'}}>
           <div
@@ -2626,6 +3132,8 @@ function AllSkillsTab(){
             <span style={{background:'rgba(70,120,120,0.15)',border:'1px solid rgba(70,120,120,0.32)',color:'#78a8a8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.stackLeftBb}bb stack</span>
             <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{villainBadgeLabel}: {state.meta.villainModel.name}</span>
             {state.meta.numPlayers > 2 && <span style={{background:'rgba(100,100,150,0.18)',border:'1px solid rgba(120,120,190,0.34)',color:'#aab0dd',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>👥 {state.meta.numPlayers}-way</span>}
+            {postflopFamily && state.node.street !== 'preflop' && <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{postflopFamily.label}</span>}
+            {state.node.street !== 'preflop' && state.node.postflopFamilyMatched === false && <span style={{background:'rgba(140,110,50,0.15)',border:'1px solid rgba(180,140,70,0.3)',color:'#c8a868',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Family fallback</span>}
             <div style={{width:'100%',fontSize:11,color:'#8fb486',fontFamily:'sans-serif',lineHeight:1.45}}>Profile read: {villainHint}</div>
           </div>
         </div>
@@ -2850,7 +3358,7 @@ function PositionsTab(){
 
 export default function PokerTrainer(){
   const [tab, setTab] = useLocalStorageState('poker_active_tab', 'allskills');
-  const titles = {allskills: 'All Skills Trainer', potodds: 'Pot Odds Trainer', preflop: 'Preflop Trainer', postflop: 'Postflop (C-Bet) Trainer', sizing: 'Bet Sizing', positions: 'Table Positions'};
+  const titles = {allskills: 'All Skills Trainer', potodds: 'Pot Odds Trainer', preflop: 'Preflop Trainer', postflop: 'Postflop v2 Trainer', sizing: 'Bet Sizing', positions: 'Table Positions'};
 
   return (
     <div style={{minHeight: '100vh', background: 'radial-gradient(ellipse at 50% -5%, #1d4d30 0%, #0e2a1a 42%, #06100b 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '22px 14px 48px', fontFamily: 'Georgia,serif'}}>
