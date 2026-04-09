@@ -3267,6 +3267,7 @@ const TABS = [
 ];
 
 export const __testables = {
+  genPotOddsScenario,
   postflopFamilyWeight,
   postflopFamilyRotation,
   postflopClassifyFamily,

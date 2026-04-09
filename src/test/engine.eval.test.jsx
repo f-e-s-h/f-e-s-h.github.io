@@ -107,4 +107,27 @@ describe('hand evaluation and equity', () => {
     expect(equity.effectiveEquity).toBe(10);
     expect(equity.potOdds).toBe(0);
   });
+
+  it('decreases draw effective equity monotonically as player count increases', () => {
+    const baseline = {
+      street: 'flop',
+      handClass: 'draw',
+      postflopEval: {equity: 52},
+      betBb: 6,
+      potBb: 18,
+    };
+
+    const hu = allSkillsEstimateEquity({...baseline, numPlayers: 2});
+    const threeWay = allSkillsEstimateEquity({...baseline, numPlayers: 3});
+    const fourWay = allSkillsEstimateEquity({...baseline, numPlayers: 4});
+
+    expect(hu.effectiveEquity).toBe(52);
+    expect(threeWay.effectiveEquity).toBe(44);
+    expect(fourWay.effectiveEquity).toBe(36);
+    expect(hu.potOdds).toBe(25);
+    expect(threeWay.potOdds).toBe(25);
+    expect(fourWay.potOdds).toBe(25);
+    expect(hu.effectiveEquity).toBeGreaterThan(threeWay.effectiveEquity);
+    expect(threeWay.effectiveEquity).toBeGreaterThan(fourWay.effectiveEquity);
+  });
 });

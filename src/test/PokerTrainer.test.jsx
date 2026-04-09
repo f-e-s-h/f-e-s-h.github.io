@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import PokerTrainer from '../App.jsx';
 
 function getFirstActionButton(){
@@ -67,5 +67,43 @@ describe('PokerTrainer smoke checks', () => {
     render(<PokerTrainer />);
 
     expect(screen.getByRole('heading', { name: 'Postflop v2 Trainer' })).toBeInTheDocument();
+  });
+
+  it('hydrates Pot Odds stats from localStorage on mount', () => {
+    window.localStorage.setItem('poker_active_tab', JSON.stringify('potodds'));
+    window.localStorage.setItem('poker_stats_0', JSON.stringify({correct: 7, total: 11}));
+    window.localStorage.setItem('poker_streak_0', JSON.stringify(3));
+    window.localStorage.setItem('poker_best_0', JSON.stringify(6));
+
+    render(<PokerTrainer />);
+
+    const correctCell = screen.getByText('Correct').parentElement;
+    const totalCell = screen.getByText('Total').parentElement;
+    const streakCell = screen.getByText('Streak').parentElement;
+    const bestCell = screen.getByText('Best').parentElement;
+
+    expect(correctCell?.firstChild).toHaveTextContent('7');
+    expect(totalCell?.firstChild).toHaveTextContent('11');
+    expect(streakCell?.firstChild).toHaveTextContent('3');
+    expect(bestCell?.firstChild).toHaveTextContent('6');
+  });
+
+  it('persists Pot Odds stat updates across remounts', async () => {
+    const mounted = render(<PokerTrainer />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pot Odds' }));
+    fireEvent.click(screen.getByRole('button', { name: 'CALL' }));
+
+    await waitFor(() => {
+      const stats = JSON.parse(window.localStorage.getItem('poker_stats_0') ?? '{}');
+      expect(stats.total).toBe(1);
+    });
+
+    mounted.unmount();
+    render(<PokerTrainer />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pot Odds' }));
+
+    const persistedStats = JSON.parse(window.localStorage.getItem('poker_stats_0') ?? '{}');
+    expect(persistedStats.total).toBe(1);
   });
 });
