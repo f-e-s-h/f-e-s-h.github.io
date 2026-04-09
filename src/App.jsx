@@ -3266,6 +3266,22 @@ const TABS = [
   {id: 'positions', label: 'Table Positions'},
 ];
 
+export const __testables = {
+  postflopFamilyWeight,
+  postflopFamilyRotation,
+  postflopClassifyFamily,
+  postflopCreateState,
+  allSkillsBestFive,
+  allSkillsEvaluatePostflopCards,
+  allSkillsEstimateEquity,
+  allSkillsDetectFatal,
+  allSkillsActionCommit,
+  allSkillsNextPot,
+  allSkillsActiveOpponents,
+  allSkillsApplyOpponentAttrition,
+  allSkillsResolve,
+};
+
 function PositionsTab(){
   const [btnSeat,setBtnSeat]=useState(0);
   const [selSeat,setSelSeat]=useState(0);
