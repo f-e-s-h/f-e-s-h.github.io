@@ -1125,6 +1125,8 @@ const AS_STREETS = ['preflop', 'flop', 'turn', 'river'];
 const AS_STACKS = [40, 60, 80, 100, 120];
 const AS_TEXTURES = ['dry', 'semi-wet', 'wet', 'paired', 'monotone'];
 const AS_FADE_DELAY_MS = 130;
+const AS_MIN_SAMPLES_FOR_FOCUS_PICK = 3;
+const AS_MIN_SAMPLES_FOR_FOCUS_CUE = 4;
 let AS_HAND_SEQ = 0;
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
@@ -1178,7 +1180,7 @@ function allSkillsPickVillainType(){
 }
 
 function allSkillsPickFocus(weakness = {}){
-  const keys = Object.keys(weakness).filter(k => (weakness[k]?.total ?? 0) >= 3);
+  const keys = Object.keys(weakness).filter(k => (weakness[k]?.total ?? 0) >= AS_MIN_SAMPLES_FOR_FOCUS_PICK);
   if(keys.length === 0) return null;
   const entries = keys.map(k => {
     const rec = weakness[k];
@@ -1441,7 +1443,7 @@ function allSkillsResolve(meta, node, scored){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
     let foldChance = clamp(villain.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.8);
-    if(meta.streetIndex < meta.targetStreet) foldChance *= 0.5;
+    if(meta.streetIndex <= meta.targetStreet) foldChance *= 0.5;
     if(Math.random() < foldChance){
       nextMeta = {...nextMeta, ended: true};
       text = 'Villain folds to pressure. Hand ends.';
@@ -1473,7 +1475,7 @@ function allSkillsSummarize(history){
 }
 
 function allSkillsNextFocus(weakness = {}){
-  const keys = Object.keys(weakness).filter(k => (weakness[k]?.total ?? 0) >= 4);
+  const keys = Object.keys(weakness).filter(k => (weakness[k]?.total ?? 0) >= AS_MIN_SAMPLES_FOR_FOCUS_CUE);
   if(keys.length === 0) return 'Keep volume high. Weak spots will surface after more reps.';
   keys.sort((a, b) => {
     const A = weakness[a], B = weakness[b];
@@ -1587,7 +1589,7 @@ function AllSkillsTab(){
           <div>
             <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Board</div>
             <div style={{display:'flex',gap:6}}>
-              {boardNow.length > 0 ? boardNow.map((c,i)=><PlayingCard key={`${state.meta.id}-b-${i}`} r={c.r} s={c.s} hero={true}/>) : <div style={{fontSize:12,color:'#507848',fontFamily:'sans-serif',paddingTop:30}}>No board cards yet</div>}
+              {boardNow.length > 0 ? boardNow.map((c,i)=><PlayingCard key={`${state.meta.id}-b-${i}`} r={c.r} s={c.s} hero={false}/>) : <div style={{fontSize:12,color:'#507848',fontFamily:'sans-serif',paddingTop:30}}>No board cards yet</div>}
             </div>
           </div>
         </div>
