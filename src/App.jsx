@@ -1572,7 +1572,7 @@ function AllSkillsTab(){
       situationText = `${villainName} opens preflop ${state.node.sizeBucket} (${state.node.betBb}bb). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
     }
   }else if(state.node.spotType === 'checked_to_hero'){
-    situationText = `${villainName} checks. You can choose your c-bet frequency/sizing on a ${state.node.boardTexture} board.`;
+    situationText = `${villainName} checks. Choose your continuation bet size (or check) on a ${state.node.boardTexture} board.`;
   }else{
     situationText = `${villainName} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} board.`;
   }
