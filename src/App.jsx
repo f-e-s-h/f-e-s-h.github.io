@@ -1128,6 +1128,8 @@ function BetSizingTab(){
 const AS_STREETS = ['preflop', 'flop', 'turn', 'river'];
 const AS_STACKS = [40, 60, 80, 100, 120];
 const AS_TEXTURES = ['dry', 'semi-wet', 'wet', 'paired', 'monotone'];
+const AS_START_STREET_WEIGHTS = [[0, 0.55], [1, 0.3], [2, 0.15]];
+const AS_MULTIWAY_DISTRIBUTION = [2, 2, 2, 2, 2, 2, 3, 4];
 const AS_FADE_DELAY_MS = 130;
 const AS_MIN_SAMPLES_FOR_FOCUS_PICK = 3;
 const AS_MIN_SAMPLES_FOR_FOCUS_CUE = 4;
@@ -1138,17 +1140,23 @@ const AS_ADAPTIVE_MISS_MULT = 0.12;
 const AS_IP_BIAS_THRESHOLD = 0.45;
 const AS_MIN_START_POT_BB = 3;
 const AS_START_POT_RANGE_BB = 5;
-const AS_DEEP_STREET_FOLD_MULT = 0.5;
+const AS_DEEP_STREET_FOLD_MULT = 0.45;
+const AS_FATAL_COMMIT_RATIO = 0.45;
+const AS_FATAL_CAP_MULT = 0.4;
+const AS_MULTIWAY_EQUITY_PENALTY = 0.15;
+
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
   lag: {label: 'LAG', name: 'Loose-Aggressive', baseWeight: 1.05, aggression: 0.75, looseness: 0.7, foldToAggro: 0.31, small: 0.22, medium: 0.45, large: 0.33},
   lp: {label: 'LP', name: 'Loose-Passive', baseWeight: 1.0, aggression: 0.35, looseness: 0.72, foldToAggro: 0.38, small: 0.45, medium: 0.42, large: 0.13},
   maniac: {label: 'Maniac', name: 'Maniac', baseWeight: 0.8, aggression: 0.9, looseness: 0.86, foldToAggro: 0.24, small: 0.2, medium: 0.4, large: 0.4},
 };
+
 const AS_ACTION_LABELS = {
   fold: 'Fold',
   check: 'Check',
   call: 'Call',
+  limp: 'Limp',
   'bet-small': 'Bet Small',
   'bet-medium': 'Bet Medium',
   'bet-large': 'Bet Large',
@@ -1160,7 +1168,7 @@ const AS_ACTION_LABELS = {
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const asRound = (n, p = 1) => Math.round(n * p) / p;
 
-function allSkillsActionLabel(a){ return AS_ACTION_LABELS[a] ?? a; }
+function allSkillsActionLabel(action){ return AS_ACTION_LABELS[action] ?? action; }
 function allSkillsStreetTitle(street){ return street === 'preflop' ? 'Preflop' : street[0].toUpperCase() + street.slice(1); }
 function allSkillsIsAggro(action){ return action.startsWith('bet') || action.startsWith('raise'); }
 function allSkillsSizeBucket(action){
@@ -1174,7 +1182,7 @@ function weightedPickFromEntries(entries){
   if(entries.length === 0) return null;
   const safeEntries = entries.map(([k, w]) => [k, Number.isFinite(w) && w > 0 ? w : 0]);
   const total = safeEntries.reduce((s, [, w]) => s + w, 0);
-  if(total <= 0) return entries[0]?.[0];
+  if(total <= 0) return safeEntries[0]?.[0] ?? null;
   let r = Math.random() * total;
   for(const [key, w] of safeEntries){
     r -= w;
@@ -1201,73 +1209,187 @@ function allSkillsPickFocus(weakness = {}){
     return [k, weight];
   });
   const key = weightedPickFromEntries(entries);
+  if(!key) return null;
   const [street, spotType, skillBucket] = key.split('|');
   return {key, street, spotType, skillBucket};
 }
 
-function allSkillsPickTargetStreet(){
-  return weightedPickFromEntries([[1, 0.2], [2, 0.35], [3, 0.45]]) ?? 2;
+function allSkillsPickStartStreet(focus = null){
+  if(focus?.street === 'turn' && Math.random() < 0.55) return 2;
+  if(focus?.street === 'flop' && Math.random() < 0.5) return 1;
+  if(focus?.street === 'preflop' && Math.random() < 0.55) return 0;
+  return weightedPickFromEntries(AS_START_STREET_WEIGHTS) ?? 0;
+}
+
+function allSkillsPickTargetStreet(startStreet){
+  if(startStreet >= 2) return 3;
+  if(startStreet === 1) return weightedPickFromEntries([[2, 0.45], [3, 0.55]]) ?? 2;
+  return weightedPickFromEntries([[1, 0.2], [2, 0.45], [3, 0.35]]) ?? 2;
 }
 
 function allSkillsNextHandId(){
-  if(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'){
-    return crypto.randomUUID();
-  }
+  if(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   const hiRes = typeof performance !== 'undefined' ? Math.round(performance.now()).toString(36) : '0';
   return `${Date.now().toString(36)}-${hiRes}-${Math.random().toString(36).slice(2, 16)}`;
 }
 
+function allSkillsNormalizeSizingModel(villain){
+  const small = clamp(villain.small, 0.05, 0.9);
+  const medium = clamp(villain.medium, 0.05, 0.9);
+  const large = clamp(villain.large, 0.05, 0.9);
+  const total = small + medium + large;
+  return {...villain, small: small / total, medium: medium / total, large: large / total};
+}
+
+function allSkillsCreateVillainModel(villainType, numPlayers){
+  const base = AS_VILLAIN_PROFILES[villainType] ?? AS_VILLAIN_PROFILES.lp;
+  const pressure = Math.max(numPlayers - 2, 0);
+  return allSkillsNormalizeSizingModel({
+    ...base,
+    aggression: clamp(base.aggression + (Math.random() - 0.5) * 0.16 - pressure * 0.04, 0.16, 0.95),
+    looseness: clamp(base.looseness + (Math.random() - 0.5) * 0.16 - pressure * 0.05, 0.14, 0.95),
+    foldToAggro: clamp(base.foldToAggro + (Math.random() - 0.5) * 0.16 - pressure * 0.06, 0.08, 0.82),
+    small: clamp(base.small + (Math.random() - 0.5) * 0.16 + pressure * 0.03, 0.08, 0.85),
+    medium: clamp(base.medium + (Math.random() - 0.5) * 0.16, 0.08, 0.85),
+    large: clamp(base.large + (Math.random() - 0.5) * 0.16 - pressure * 0.02, 0.08, 0.85),
+  });
+}
+
 function createAllSkillsHandMeta(weakness = {}){
+  const focus = allSkillsPickFocus(weakness);
+  const startStreetIndex = allSkillsPickStartStreet(focus);
   const deck = makeDeck();
   const heroCards = deck.splice(0, 2);
   const boardCards = deck.splice(0, 5);
   const villainType = allSkillsPickVillainType();
+  const numPlayers = randItem(AS_MULTIWAY_DISTRIBUTION);
+  const stackBb = randItem(AS_STACKS);
+  const startPotBb = asRound(AS_MIN_START_POT_BB + Math.random() * AS_START_POT_RANGE_BB, 10);
+  const stageMult = startStreetIndex === 0 ? 1 : startStreetIndex === 1 ? (1.8 + Math.random() * 0.4) : (2.5 + Math.random() * 0.6);
+  const currentPotBb = asRound(startPotBb * stageMult * (1 + Math.max(numPlayers - 2, 0) * 0.12), 10);
+  const stackLeftBb = asRound(Math.max(stackBb - currentPotBb * 0.28, 12), 10);
   return {
     id: allSkillsNextHandId(),
     villainType,
+    villainModel: allSkillsCreateVillainModel(villainType, numPlayers),
+    numPlayers,
     heroPos: Math.random() > AS_IP_BIAS_THRESHOLD ? 'ip' : 'oop',
-    stackBb: randItem(AS_STACKS),
-    startPotBb: asRound(AS_MIN_START_POT_BB + Math.random() * AS_START_POT_RANGE_BB, 10),
-    targetStreet: allSkillsPickTargetStreet(),
-    focus: allSkillsPickFocus(weakness),
+    stackBb,
+    stackLeftBb,
+    startPotBb,
+    currentPotBb,
+    startStreetIndex,
+    targetStreet: allSkillsPickTargetStreet(startStreetIndex),
+    focus,
     heroCards,
     boardCards,
-    streetIndex: 0,
+    streetIndex: startStreetIndex,
     ended: false,
     history: [],
   };
 }
 
-function allSkillsPickSizing(villain){
-  const smallW = clamp(villain.small + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
-  const mediumW = clamp(villain.medium + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
-  const largeW = clamp(villain.large + (Math.random() - 0.5) * 0.08, 0.01, 0.9);
-  const total = smallW + mediumW + largeW;
-  return weightedPickFromEntries([
-    ['small', smallW / total],
-    ['medium', mediumW / total],
-    ['large', largeW / total],
-  ]);
+function allSkillsBoardTexture(boardCards){
+  if(boardCards.length < 3) return 'dry';
+  const ranks = boardCards.map(c => c.r);
+  const uniqueRanks = [...new Set(ranks)].sort((a, b) => a - b);
+  const rankCounts = {};
+  const suitCounts = {};
+  for(const c of boardCards){
+    rankCounts[c.r] = (rankCounts[c.r] || 0) + 1;
+    suitCounts[c.s] = (suitCounts[c.s] || 0) + 1;
+  }
+  if(Object.values(rankCounts).some(v => v >= 2)) return 'paired';
+  const maxSuit = Math.max(...Object.values(suitCounts));
+  const span = uniqueRanks[uniqueRanks.length - 1] - uniqueRanks[0];
+  const connected = uniqueRanks.length >= 3 && span <= 4;
+  if(maxSuit >= 3) return 'monotone';
+  if(maxSuit === 2 && connected) return 'wet';
+  if(maxSuit === 2 || connected) return 'semi-wet';
+  return randItem(AS_TEXTURES.slice(0, 2));
 }
 
-function allSkillsPickPostflopClass(street, focus = null){
-  const base = {air: 1.2, draw: 1.4, marginal: 1.8, strong: 1.3, monster: 0.7};
+function allSkillsResolvePosition(heroPos){
+  if(heroPos === 'ip') return randItem(['co', 'btn']);
+  return randItem(['utg', 'utg1', 'hj', 'sb', 'bb']);
+}
+
+function allSkillsPickSizing(villain){
+  return weightedPickFromEntries([
+    ['small', villain.small],
+    ['medium', villain.medium],
+    ['large', villain.large],
+  ]) ?? 'medium';
+}
+
+function allSkillsPickPostflopClass(street, focus = null, numPlayers = 2){
+  const extra = Math.max(numPlayers - 2, 0);
+  const base = {air: 1.2, draw: 1.4, marginal: 1.8 + extra * 0.2, strong: 1.3, monster: 0.7};
   if(street === 'turn'){ base.draw = 1.2; base.strong = 1.45; }
-  if(street === 'river'){ base.draw = 0.35; base.marginal = 1.5; base.strong = 1.6; base.monster = 0.95; }
+  if(street === 'river'){ base.draw = 0.35; base.marginal = 1.45; base.strong = 1.6; base.monster = 0.95; }
+  if(extra > 0){ base.strong += 0.2; base.draw -= 0.12 * extra; }
   if(focus?.skillBucket === 'bluffing') base.air += 0.65;
   if(focus?.skillBucket === 'value') base.strong += 0.7;
-  return weightedPickFromEntries(Object.entries(base));
+  return weightedPickFromEntries(Object.entries(base)) ?? 'marginal';
 }
 
 function allSkillsPickPreflopClass(meta){
   const inLate = meta.heroPos === 'ip';
+  const extra = Math.max(meta.numPlayers - 2, 0);
   return weightedPickFromEntries([
-    ['premium', 0.6],
-    ['strong', 1.2],
-    ['medium', inLate ? 1.8 : 1.2],
-    ['speculative', inLate ? 1.4 : 0.9],
-    ['weak', inLate ? 0.9 : 1.4],
-  ]);
+    ['premium', 0.6 + extra * 0.3],
+    ['strong', 1.2 + extra * 0.4],
+    ['medium', (inLate ? 1.8 : 1.2) + extra * 0.1],
+    ['speculative', Math.max((inLate ? 1.4 : 0.9) - extra * 0.25, 0.35)],
+    ['weak', Math.max((inLate ? 0.9 : 1.4) - extra * 0.22, 0.4)],
+  ]) ?? 'medium';
+}
+
+function allSkillsTightenTier(tier, numPlayers){
+  const order = ['premium', 'strong', 'medium', 'speculative', 'weak'];
+  const idx = order.indexOf(tier);
+  if(idx === -1) return 'medium';
+  const bump = Math.max(Math.min(numPlayers - 2, 2), 0);
+  return order[Math.min(idx + bump, order.length - 1)];
+}
+
+function allSkillsEstimateEquity(node){
+  let equity = 0;
+  if(node.handClass === 'monster') equity = 84;
+  else if(node.handClass === 'strong') equity = node.street === 'river' ? 68 : 62;
+  else if(node.handClass === 'marginal') equity = node.street === 'river' ? 30 : 36;
+  else if(node.handClass === 'draw') equity = node.street === 'flop' ? 32 : node.street === 'turn' ? 18 : 8;
+  else equity = node.street === 'river' ? 10 : 15;
+
+  const extra = Math.max(node.numPlayers - 2, 0);
+  let effectiveEquity = equity;
+  if(node.handClass === 'draw') effectiveEquity = Math.max(2, Math.round(equity - equity * extra * AS_MULTIWAY_EQUITY_PENALTY));
+  if(node.handClass === 'marginal') effectiveEquity = Math.max(2, Math.round(equity - equity * extra * 0.1));
+  if(node.handClass === 'air') effectiveEquity = Math.max(1, Math.round(equity - equity * extra * 0.08));
+
+  const potOdds = node.betBb ? Math.round(node.betBb / (node.potBb + node.betBb) * 100) : 0;
+  return {equity, effectiveEquity, potOdds};
+}
+
+function allSkillsSizingStrength(handClass){
+  if(handClass === 'monster') return 'monster';
+  if(handClass === 'strong') return 'strong';
+  if(handClass === 'marginal') return 'medium';
+  if(handClass === 'draw') return 'draw';
+  return 'air';
+}
+
+function allSkillsPreferredBetAction(node){
+  const correctBands = correctBetSize({
+    bluff: node.handClass === 'air',
+    street: node.street,
+    strength: allSkillsSizingStrength(node.handClass),
+    numPlayers: node.numPlayers,
+  });
+  if(correctBands.some(k => k === 'threequarter' || k === 'pot' || k === 'over')) return node.options.includes('bet-large') ? 'bet-large' : 'bet-medium';
+  if(correctBands.includes('half')) return node.options.includes('bet-medium') ? 'bet-medium' : 'bet-small';
+  if(correctBands.includes('quarter')) return node.options.includes('bet-small') ? 'bet-small' : 'check';
+  return node.options.includes('bet-medium') ? 'bet-medium' : 'check';
 }
 
 function allSkillsSkillBucket(node){
@@ -1282,43 +1404,59 @@ function allSkillsSkillBucket(node){
 
 function allSkillsBuildNode(meta){
   const street = AS_STREETS[meta.streetIndex];
-  const villain = AS_VILLAIN_PROFILES[meta.villainType];
   const focusMatch = !!meta.focus && meta.focus.street === street;
-  const boardTexture = randItem(AS_TEXTURES);
-  const potBb = asRound(meta.startPotBb * (1 + meta.streetIndex * 0.8 + Math.random() * 0.35), 10);
-  const stackLeftBb = asRound(Math.max(meta.stackBb - potBb * 0.35, 12), 10);
+  const boardCount = street === 'preflop' ? 0 : street === 'flop' ? 3 : street === 'turn' ? 4 : 5;
+  const boardNow = meta.boardCards.slice(0, boardCount);
+  const boardTexture = street === 'preflop' ? 'n/a' : allSkillsBoardTexture(boardNow);
+  const potBb = asRound(meta.currentPotBb, 10);
+  const stackLeftBb = asRound(meta.stackLeftBb, 10);
+
   let spotType = 'checked_to_hero';
   let handClass = 'marginal';
   let sizeBucket = null;
   let betBb = null;
-  let options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
+  let raiseOpenBb = null;
+  let preflopPos = null;
+  let preflopSituation = null;
+  let options = ['check', 'bet-small', 'bet-medium'];
 
   if(street === 'preflop'){
     handClass = allSkillsPickPreflopClass(meta);
-    const facingOpenChance = clamp(villain.looseness * 0.7 + villain.aggression * 0.2 + (meta.heroPos === 'oop' ? 0.15 : 0), 0.2, 0.9);
+    preflopPos = allSkillsResolvePosition(meta.heroPos);
+    const facingOpenChance = clamp(meta.villainModel.looseness * 0.62 + meta.villainModel.aggression * 0.24 + (meta.heroPos === 'oop' ? 0.1 : 0) + Math.max(meta.numPlayers - 2, 0) * 0.06, 0.15, 0.9);
     spotType = (focusMatch && meta.focus.spotType?.startsWith('preflop')) ? meta.focus.spotType : (Math.random() < facingOpenChance ? 'preflop_facing_open' : 'preflop_open');
     if(spotType === 'preflop_open'){
-      options = ['fold', 'raise-small', 'raise-medium', 'raise-large'];
-    }else{
-      sizeBucket = allSkillsPickSizing(villain);
-      betBb = asRound(2.2 + (sizeBucket === 'small' ? 0.1 : sizeBucket === 'medium' ? 0.7 : 1.5), 10);
+      preflopSituation = 'unopened';
+      raiseOpenBb = asRound(2.3 + Math.max(meta.numPlayers - 2, 0) * 0.25, 10);
+      options = ['fold', 'limp', 'raise-small', 'raise-medium'];
+    } else {
+      sizeBucket = allSkillsPickSizing(meta.villainModel);
+      raiseOpenBb = asRound(2.4 + (sizeBucket === 'small' ? 0.2 : sizeBucket === 'medium' ? 0.9 : 1.6) + Math.max(meta.numPlayers - 2, 0) * 0.35, 10);
+      betBb = raiseOpenBb;
+      preflopSituation = meta.numPlayers > 2 ? 'raise_caller' : 'raise';
       options = ['fold', 'call', 'raise-large'];
     }
-  }else{
-    handClass = allSkillsPickPostflopClass(street, meta.focus);
-    const betFreq = clamp(villain.aggression * 0.65 + (meta.heroPos === 'oop' ? 0.1 : 0), 0.15, 0.88);
+  } else {
+    handClass = allSkillsPickPostflopClass(street, meta.focus, meta.numPlayers);
+    const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(meta.numPlayers - 2, 0) * 0.04, 0.18, 0.9);
     spotType = (focusMatch && meta.focus.spotType && !meta.focus.spotType.startsWith('preflop'))
       ? meta.focus.spotType
       : (Math.random() < betFreq ? 'facing_bet' : 'checked_to_hero');
-    if(spotType === 'facing_bet'){
-      sizeBucket = allSkillsPickSizing(villain);
-      const pct = sizeBucket === 'small' ? 0.33 : sizeBucket === 'medium' ? 0.6 : 0.9;
-      betBb = asRound(potBb * pct, 10);
+    if(spotType === 'checked_to_hero'){
+      if(handClass === 'monster' || handClass === 'strong') options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
+      else if(handClass === 'draw') options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
+      else if(handClass === 'marginal') options = ['check', 'bet-small', 'bet-medium'];
+      else options = ['check', 'bet-small', 'bet-medium'];
+    } else {
+      sizeBucket = allSkillsPickSizing(meta.villainModel);
+      const pct = sizeBucket === 'small' ? 0.33 : sizeBucket === 'medium' ? 0.58 : 0.86;
+      const pressure = 1 + Math.max(meta.numPlayers - 2, 0) * 0.06;
+      betBb = asRound(potBb * pct * pressure, 10);
       options = ['fold', 'call', 'raise-small', 'raise-large'];
     }
   }
 
-  const node = {
+  let node = {
     street,
     spotType,
     handClass,
@@ -1326,51 +1464,94 @@ function allSkillsBuildNode(meta){
     potBb,
     betBb,
     sizeBucket,
+    raiseOpenBb,
+    preflopPos,
+    preflopSituation,
     stackLeftBb,
     options,
     heroPos: meta.heroPos,
     villainType: meta.villainType,
-    villainLabel: villain.label,
+    villainLabel: meta.villainModel.label,
+    villainModel: meta.villainModel,
+    numPlayers: meta.numPlayers,
   };
+
+  if(spotType === 'facing_bet'){
+    const math = allSkillsEstimateEquity(node);
+    node = {...node, ...math};
+  }
+
   const baseline = allSkillsBaselineDecision(node);
   const exploit = allSkillsExploitDecision(node, baseline);
   const skillBucket = allSkillsSkillBucket(node);
   return {...node, baseline, exploit, skillBucket, focusKey: `${street}|${spotType}|${skillBucket}`};
 }
 
+function allSkillsMapPreflopDecision(node, decision){
+  if(node.spotType === 'preflop_open'){
+    if(decision.action === 'raise'){
+      if(node.handClass === 'speculative') return {action: 'raise-small', reason: decision.why};
+      return {action: 'raise-medium', reason: decision.why};
+    }
+    if(decision.action === 'call') return {action: 'limp', reason: decision.why};
+    return {action: 'fold', reason: decision.why};
+  }
+  if(decision.action === 'raise') return {action: 'raise-large', reason: decision.why};
+  if(decision.action === 'call') return {action: 'call', reason: decision.why};
+  return {action: 'fold', reason: decision.why};
+}
+
 function allSkillsBaselineDecision(node){
   const ip = node.heroPos === 'ip';
   if(node.street === 'preflop'){
-    if(node.spotType === 'preflop_open'){
-      if(node.handClass === 'premium') return {action: 'raise-large', reason: 'Premium opens for max value and initiative.'};
-      if(node.handClass === 'strong') return {action: 'raise-medium', reason: 'Strong opens at a standard size.'};
-      if(node.handClass === 'medium') return {action: ip ? 'raise-medium' : 'raise-small', reason: 'Medium opens mostly when position supports realization.'};
-      if(node.handClass === 'speculative') return {action: ip ? 'raise-small' : 'fold', reason: 'Speculative opens prefer position.'};
-      return {action: 'fold', reason: 'Weak preflop hand should usually fold.'};
-    }
-    if(node.handClass === 'premium') return {action: 'raise-large', reason: 'Premium vs open prefers a 3-bet for value.'};
-    if(node.handClass === 'strong') return {action: ip ? 'call' : 'raise-large', reason: 'Strong hand defends, often 3-bets out of position.'};
-    if(node.handClass === 'medium') return {action: ip ? 'call' : 'fold', reason: 'Medium mostly calls in position, folds more OOP.'};
-    return {action: 'fold', reason: 'Speculative/weak hands fold versus opens by default.'};
+    const tightTier = allSkillsTightenTier(node.handClass, node.numPlayers);
+    const raiseAmt = Math.max(2, Math.round(node.raiseOpenBb ?? 3));
+    const decision = getDecision(tightTier, node.preflopPos, node.preflopSituation, raiseAmt);
+    const mapped = allSkillsMapPreflopDecision(node, decision);
+    const reason = node.numPlayers > 2 ? `${mapped.reason} ${node.numPlayers}-way pot — tighten up here.` : mapped.reason;
+    return {action: mapped.action, reason};
   }
 
   if(node.spotType === 'checked_to_hero'){
-    if(node.handClass === 'monster') return {action: node.boardTexture === 'wet' ? 'bet-large' : 'bet-medium', reason: 'Nutted hands value bet immediately.'};
-    if(node.handClass === 'strong') return {action: 'bet-medium', reason: 'Strong made hands value/protect with a medium size.'};
-    if(node.handClass === 'draw') return {action: 'bet-medium', reason: 'Draws like semi-bluff pressure with decent equity.'};
-    if(node.handClass === 'marginal') return {action: 'check', reason: 'Marginal showdown hands often check for pot control.'};
-    return {action: ip ? 'bet-small' : 'check', reason: 'Air mixes small stabs in position and checks more OOP.'};
+    if(node.handClass === 'monster') return {action: node.boardTexture === 'wet' ? 'bet-large' : allSkillsPreferredBetAction(node), reason: 'Nutted hands push value and deny free equity.'};
+    if(node.handClass === 'strong') return {action: allSkillsPreferredBetAction(node), reason: 'Strong made hands value-bet while protecting against runouts.'};
+    if(node.handClass === 'draw'){
+      if(node.numPlayers > 2) return {action: 'check', reason: 'Multiway pressure discounts draw equity; avoid over-bluffing.'};
+      return {action: allSkillsPreferredBetAction(node), reason: 'Semi-bluffing draws combines fold equity with draw equity.'};
+    }
+    if(node.handClass === 'marginal') return {action: 'check', reason: 'Marginal showdown value prefers pot control.'};
+    return {action: ip && node.boardTexture === 'dry' ? 'bet-small' : 'check', reason: 'Air can stab dry boards in position but should check more often elsewhere.'};
   }
 
-  if(node.handClass === 'monster') return {action: 'raise-large', reason: 'Against a bet, monsters want to stack value quickly.'};
-  if(node.handClass === 'strong') return {action: node.sizeBucket === 'large' ? 'call' : 'raise-small', reason: 'Strong hands defend and can raise non-large sizes.'};
-  if(node.handClass === 'draw'){
-    if(node.sizeBucket === 'small') return {action: 'call', reason: 'Price is good to continue with draws.'};
-    if(node.sizeBucket === 'medium') return {action: ip ? 'call' : 'fold', reason: 'Medium sizing is close; continue more in position.'};
-    return {action: 'fold', reason: 'Large bets deny correct odds to many draws.'};
+  const hasPrice = (node.effectiveEquity ?? 0) >= (node.potOdds ?? 100);
+  if(node.handClass === 'monster') return {action: 'raise-large', reason: 'Monsters versus a bet should build the pot quickly.'};
+  if(node.handClass === 'strong'){
+    if(node.sizeBucket === 'small' && node.options.includes('raise-small')) return {action: 'raise-small', reason: 'Strong hand versus small sizing can extract value with a raise.'};
+    return {action: 'call', reason: 'Strong hand can continue comfortably versus this sizing.'};
   }
-  if(node.handClass === 'marginal') return {action: node.sizeBucket === 'small' ? 'call' : 'fold', reason: 'Marginal hands call only at favorable price.'};
-  return {action: 'fold', reason: 'Air generally folds versus aggression.'};
+  if(node.handClass === 'draw'){
+    if(hasPrice) return {action: 'call', reason: `Pot odds require ${node.potOdds}% and your discounted draw equity is ~${node.effectiveEquity}%.`};
+    return {action: 'fold', reason: `You need ${node.potOdds}% but discounted draw equity is only ~${node.effectiveEquity}%.`};
+  }
+  if(node.handClass === 'marginal'){
+    if(node.sizeBucket === 'small' && hasPrice) return {action: 'call', reason: `Small sizing gives enough price (${node.potOdds}%) to defend this bluff-catcher.`};
+    return {action: 'fold', reason: 'Marginal hands should fold to pressure unless price is clearly favorable.'};
+  }
+  return {action: 'fold', reason: 'Air should fold against aggression.'};
+}
+
+function allSkillsActionLadder(node){
+  if(node.street === 'preflop' && node.spotType === 'preflop_open') return ['fold', 'limp', 'raise-small', 'raise-medium'];
+  if(node.street === 'preflop') return ['fold', 'call', 'raise-large'];
+  if(node.spotType === 'checked_to_hero') return ['check', 'bet-small', 'bet-medium', 'bet-large'];
+  return ['fold', 'call', 'raise-small', 'raise-large'];
+}
+
+function allSkillsStepAction(node, action, direction){
+  const ladder = allSkillsActionLadder(node).filter(a => node.options.includes(a));
+  const idx = ladder.indexOf(action);
+  if(idx === -1) return action;
+  return ladder[clamp(idx + direction, 0, ladder.length - 1)];
 }
 
 function allSkillsExploitDecision(node, baseline){
@@ -1379,51 +1560,79 @@ function allSkillsExploitDecision(node, baseline){
   let reason = 'Baseline line remains best versus this archetype.';
 
   if(v === 'lp'){
-    if(node.spotType === 'checked_to_hero' && (node.handClass === 'strong' || node.handClass === 'monster')){
-      action = action === 'bet-medium' ? 'bet-large' : action;
-      reason = 'Loose-passive players call too much, so value bet larger.';
+    if(node.spotType === 'checked_to_hero' && (node.handClass === 'strong' || node.handClass === 'monster') && allSkillsIsAggro(action)){
+      action = allSkillsStepAction(node, action, 1);
+      reason = 'Loose-passive players call too wide, so value can size up one step.';
     }
-    if(node.spotType === 'checked_to_hero' && node.handClass === 'air' && action.startsWith('bet')){
+    if(node.spotType === 'checked_to_hero' && node.handClass === 'air' && allSkillsIsAggro(action)){
       action = 'check';
-      reason = 'Loose-passive players under-fold, so reduce pure bluffs.';
+      reason = 'Loose-passive players under-fold, so cut low-equity bluffs.';
     }
   }
 
   if(v === 'tag'){
-    if(node.spotType === 'checked_to_hero' && node.handClass === 'air' && action.startsWith('bet')){
-      action = 'check';
-      reason = 'TAG opponents defend correctly; low-equity stabs lose EV.';
+    if(node.spotType === 'checked_to_hero' && node.handClass === 'air' && allSkillsIsAggro(action)){
+      action = allSkillsStepAction(node, action, -1);
+      reason = 'TAG ranges defend correctly, so trim speculative stabs.';
     }
-    if(node.spotType === 'facing_bet' && node.handClass === 'marginal' && baseline.action === 'call'){
+    if(node.spotType === 'facing_bet' && node.handClass === 'marginal' && action === 'call'){
       action = 'fold';
-      reason = 'Tight ranges mean marginal bluff-catchers lose value.';
+      reason = 'Tight aggression narrows value-heavy ranges; fold more bluff-catchers.';
     }
   }
 
   if(v === 'lag'){
-    if(node.spotType === 'facing_bet' && node.handClass === 'strong' && baseline.action === 'call'){
+    if(node.spotType === 'facing_bet' && node.handClass === 'strong' && action === 'call' && node.options.includes('raise-small')){
       action = 'raise-small';
-      reason = 'LAGs barrel wide; punish with more value raises.';
+      reason = 'LAGs over-barrel, so punish with extra thin value raises.';
     }
-    if(node.spotType === 'facing_bet' && node.handClass === 'draw' && baseline.action === 'fold' && node.sizeBucket !== 'large'){
+    if(node.spotType === 'facing_bet' && node.handClass === 'draw' && action === 'fold' && node.sizeBucket !== 'large'){
       action = 'call';
-      reason = 'Versus wide aggression, continue slightly wider with equity.';
+      reason = 'Wide aggression gives better realization for draw continues.';
     }
   }
 
   if(v === 'maniac'){
     if(node.spotType === 'facing_bet' && node.handClass === 'strong'){
       action = node.sizeBucket === 'large' ? 'call' : 'raise-small';
-      reason = 'Maniacs over-bluff, so defend and trap more with strong hands.';
+      reason = 'Maniacs over-bluff, so defend more and punish smaller sizings.';
     }
-    if(node.spotType === 'checked_to_hero' && node.handClass === 'monster'){
+    if(node.spotType === 'checked_to_hero' && node.handClass === 'monster' && node.options.includes('bet-large')){
       action = 'bet-large';
-      reason = 'Versus mania, maximize value with bigger bets.';
+      reason = 'Versus mania, maximize value with larger bets.';
+    }
+  }
+
+  if(node.numPlayers > 2){
+    if(node.spotType === 'facing_bet' && (node.handClass === 'draw' || node.handClass === 'marginal') && action === 'call' && node.sizeBucket !== 'small'){
+      action = 'fold';
+      reason = `${node.numPlayers}-way pressure tightens postflop defense thresholds.`;
+    }
+    if(node.handClass === 'air' && allSkillsIsAggro(action)){
+      action = allSkillsStepAction(node, action, -1);
+      reason = `${node.numPlayers}-way pots reduce bluff success, so scale aggression down one step.`;
+    }
+    if(node.handClass === 'draw' && action.startsWith('raise')){
+      action = 'call';
+      reason = `${node.numPlayers}-way pots discount draw equity; prefer lower-variance continues.`;
     }
   }
 
   if(!node.options.includes(action)) return {action: baseline.action, reason: baseline.reason};
   return {action, reason};
+}
+
+function allSkillsDetectFatal(node, action){
+  if(node.spotType === 'preflop_open' && action === 'limp' && node.handClass === 'weak'){
+    return {isFatal: true, code: 'limp_trash', message: 'Fatal error: open-limping weak trash is a major leak.'};
+  }
+  if(node.spotType === 'facing_bet' && node.sizeBucket === 'small' && (node.handClass === 'strong' || node.handClass === 'monster') && action === 'fold'){
+    return {isFatal: true, code: 'fold_strong_small', message: 'Fatal error: folding a strong hand to a small bet is a severe under-defense.'};
+  }
+  if(node.spotType === 'facing_bet' && node.handClass === 'air' && (action === 'call' || action.startsWith('raise')) && node.betBb && node.stackLeftBb > 0 && (node.betBb / node.stackLeftBb) >= AS_FATAL_COMMIT_RATIO){
+    return {isFatal: true, code: 'air_stack_off', message: 'Fatal error: committing a large stack share with air is a hard punt.'};
+  }
+  return {isFatal: false, code: null, message: ''};
 }
 
 function allSkillsScoreAction(node, action){
@@ -1436,16 +1645,56 @@ function allSkillsScoreAction(node, action){
   let reason = '';
 
   if(isBest) reason = `Best play: ${allSkillsActionLabel(exploit)}. ${node.exploit.reason}`;
-  else if(isBaseline) reason = `Baseline-correct: ${node.baseline.reason} Exploit vs ${node.villainLabel} prefers ${allSkillsActionLabel(exploit)}.`;
-  else reason = `Best line is ${allSkillsActionLabel(exploit)}. Baseline anchor: ${allSkillsActionLabel(baseline)}.`;
+  else if(isBaseline) reason = `Baseline-correct: ${node.baseline.reason} Exploit against ${node.villainLabel} prefers ${allSkillsActionLabel(exploit)}.`;
+  else reason = `Best line is ${allSkillsActionLabel(exploit)}. Baseline anchor is ${allSkillsActionLabel(baseline)}.`;
 
-  return {action, isCorrect, score, reason, bestAction: exploit, baselineAction: baseline};
+  return {action, isCorrect, score, reason, bestAction: exploit, baselineAction: baseline, skillTag: `${node.street}|${node.spotType}|${node.skillBucket}`};
 }
 
-function allSkillsResolve(meta, node, scored){
-  const villain = AS_VILLAIN_PROFILES[meta.villainType];
+function allSkillsActionCommit(node, action){
+  if(action === 'fold' || action === 'check') return 0;
+  if(action === 'limp') return 1;
+
+  if(node.street === 'preflop'){
+    if(node.spotType === 'preflop_open'){
+      if(action === 'raise-small') return asRound(2.4 + Math.max(node.numPlayers - 2, 0) * 0.2, 10);
+      if(action === 'raise-medium') return asRound(3.1 + Math.max(node.numPlayers - 2, 0) * 0.3, 10);
+    }
+    if(action === 'call') return asRound(node.betBb ?? 2.6, 10);
+    if(action === 'raise-large') return asRound((node.betBb ?? 2.8) * 2.4, 10);
+  }
+
+  if(action === 'call') return asRound(node.betBb ?? (node.potBb * 0.4), 10);
+
+  if(action.startsWith('bet')){
+    const pct = action.endsWith('small') ? 0.3 : action.endsWith('medium') ? 0.58 : 0.85;
+    return asRound(node.potBb * pct, 10);
+  }
+
+  if(action.startsWith('raise')){
+    const pct = action.endsWith('small') ? 0.55 : action.endsWith('medium') ? 0.8 : 1.1;
+    const base = node.betBb ?? asRound(node.potBb * 0.45, 10);
+    return asRound(base + node.potBb * pct, 10);
+  }
+
+  return 0;
+}
+
+function allSkillsNextPot(node, action, commit){
+  if(action === 'fold' || action === 'check') return asRound(node.potBb, 10);
+  if(action === 'limp') return asRound(node.potBb + commit * Math.max(node.numPlayers - 1, 1), 10);
+  if(action === 'call'){
+    const toCall = node.betBb ?? commit;
+    return asRound(node.potBb + toCall * 2, 10);
+  }
+  if(allSkillsIsAggro(action)) return asRound(node.potBb + commit * 2, 10);
+  return asRound(node.potBb + commit, 10);
+}
+
+function allSkillsResolve(meta, node, scored, fatalInfo){
   const entry = {
     street: node.street,
+    spotType: node.spotType,
     skillBucket: node.skillBucket,
     action: scored.action,
     isCorrect: scored.isCorrect,
@@ -1453,50 +1702,109 @@ function allSkillsResolve(meta, node, scored){
     reason: scored.reason,
     bestAction: scored.bestAction,
     baselineAction: scored.baselineAction,
+    fatal: fatalInfo.isFatal,
+    fatalCode: fatalInfo.code,
+    fatalReason: fatalInfo.message,
   };
   let nextMeta = {...meta, history: [...meta.history, entry]};
-  let text = '';
+
+  if(fatalInfo.isFatal){
+    nextMeta = {...nextMeta, ended: true};
+    return {meta: nextMeta, ended: true, fatal: true, text: 'Fatal error detected. Hand terminated and score capped.'};
+  }
 
   if(scored.action === 'fold'){
     nextMeta = {...nextMeta, ended: true};
-    text = 'You folded. Hand ends immediately.';
-    return {meta: nextMeta, ended: true, text};
+    return {meta: nextMeta, ended: true, fatal: false, text: 'You folded. Hand ends immediately.'};
   }
+
+  const heroCommitRaw = allSkillsActionCommit(node, scored.action);
+  const heroCommit = asRound(Math.min(heroCommitRaw, meta.stackLeftBb), 10);
+  const nextPot = allSkillsNextPot(node, scored.action, heroCommit);
+  const nextStack = asRound(Math.max(meta.stackLeftBb - heroCommit, 2), 10);
 
   if(allSkillsIsAggro(scored.action)){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
-    let foldChance = clamp(villain.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.8);
-    // Make villain slightly stickier through the target street so more reps reach later streets.
+    let foldChance = clamp(meta.villainModel.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.85);
+    if(meta.numPlayers > 2) foldChance *= clamp(1 - (meta.numPlayers - 2) * 0.09, 0.65, 1);
     if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT;
     if(Math.random() < foldChance){
       nextMeta = {...nextMeta, ended: true};
-      text = 'Villain folds to pressure. Hand ends.';
-      return {meta: nextMeta, ended: true, text};
+      return {meta: nextMeta, ended: true, fatal: false, text: 'Villain folds to pressure. Hand ends.'};
     }
   }
 
   if(meta.streetIndex >= 3){
     nextMeta = {...nextMeta, ended: true};
-    text = 'River complete. Hand goes to showdown.';
-    return {meta: nextMeta, ended: true, text};
+    return {meta: nextMeta, ended: true, fatal: false, text: 'River complete. Hand goes to showdown.'};
   }
 
-  nextMeta = {...nextMeta, streetIndex: meta.streetIndex + 1};
-  text = `Villain continues. Proceed to ${allSkillsStreetTitle(AS_STREETS[nextMeta.streetIndex])}.`;
-  return {meta: nextMeta, ended: false, text};
+  nextMeta = {...nextMeta, streetIndex: meta.streetIndex + 1, currentPotBb: nextPot, stackLeftBb: nextStack};
+  return {meta: nextMeta, ended: false, fatal: false, text: `Villain continues. Proceed to ${allSkillsStreetTitle(AS_STREETS[nextMeta.streetIndex])}.`};
 }
 
-function allSkillsSummarize(history){
-  const total = history.length;
-  const points = history.reduce((s, h) => s + h.score, 0);
-  const breakdown = {};
+function allSkillsSummarize(meta){
+  const history = meta.history;
+  const maxPoints = 4 - meta.startStreetIndex;
+  const rawPoints = history.reduce((s, h) => s + h.score, 0);
+  const fatalEntry = history.find(h => h.fatal);
+  const fatalCapPoints = asRound(AS_FATAL_CAP_MULT * maxPoints, 10);
+  const points = fatalEntry ? Math.min(rawPoints, fatalCapPoints) : rawPoints;
+
+  const streetMarks = {preflop: '—', flop: '—', turn: '—', river: '—'};
+  for(const h of history) streetMarks[h.street] = h.fatal ? '☠' : h.isCorrect ? '✓' : '✗';
+
+  const leakWeights = {};
+  const leakReasons = {};
   for(const h of history){
-    if(!breakdown[h.skillBucket]) breakdown[h.skillBucket] = {points: 0, total: 0};
-    breakdown[h.skillBucket].points += h.score;
-    breakdown[h.skillBucket].total += 1;
+    if(h.isCorrect && !h.fatal) continue;
+    const pen = h.fatal ? 2 : (1 - h.score);
+    leakWeights[h.skillBucket] = (leakWeights[h.skillBucket] ?? 0) + pen;
+    if(!leakReasons[h.skillBucket]) leakReasons[h.skillBucket] = h.reason;
   }
-  return {total, points, breakdown};
+  const leakKey = Object.keys(leakWeights).sort((a, b) => leakWeights[b] - leakWeights[a])[0] ?? null;
+
+  const leakLabel = {
+    preflop_open: 'preflop opening discipline',
+    preflop_defense: 'preflop defense decisions',
+    value: 'value extraction spots',
+    bluffing: 'bluff frequency control',
+    draw_defense: 'draw defense under pressure',
+    postflop_defense: 'postflop bluff-catch discipline',
+  };
+
+  const cueMap = {
+    preflop_open: 'Tighten opens in crowded pots and avoid weak open-limps.',
+    preflop_defense: 'Respect raise strength and position before defending.',
+    value: 'When ahead, choose value sizes that still get called.',
+    bluffing: 'Cut low-equity bluffs in multiway and against sticky profiles.',
+    draw_defense: 'Use pot odds plus multiway discounts before continuing draws.',
+    postflop_defense: 'Defend selectively; not every bluff-catcher is a call.',
+  };
+
+  let biggestLeak = 'No major leak this hand.';
+  let improvementCue = 'Keep volume high. The engine will sharpen your weak spots.';
+  if(fatalEntry){
+    biggestLeak = `Fatal: ${fatalEntry.fatalReason}`;
+    if(fatalEntry.fatalCode === 'limp_trash') improvementCue = 'Open-fold or open-raise weak hands. Avoid default limps.';
+    if(fatalEntry.fatalCode === 'fold_strong_small') improvementCue = 'Do not over-fold strong hands versus small bets.';
+    if(fatalEntry.fatalCode === 'air_stack_off') improvementCue = 'Avoid committing a large stack share with air.';
+  } else if(leakKey){
+    biggestLeak = `${leakLabel[leakKey] ?? leakKey}. ${leakReasons[leakKey] ?? ''}`;
+    improvementCue = cueMap[leakKey] ?? improvementCue;
+  }
+
+  return {
+    points,
+    rawPoints,
+    maxPoints,
+    fatal: !!fatalEntry,
+    fatalCapPoints,
+    streetMarks,
+    biggestLeak,
+    improvementCue,
+  };
 }
 
 function allSkillsNextFocus(weakness = {}){
@@ -1527,6 +1835,7 @@ function AllSkillsTab(){
   const [best, setBest] = useLocalStorageState('poker_allskills_best', 0);
   const [examMode, setExamMode] = useLocalStorageState('poker_allskills_exam', false);
   const [fade, setFade] = useState(true);
+
   const init = () => {
     const m = createAllSkillsHandMeta(weakness);
     return {meta: m, node: allSkillsBuildNode(m), result: null};
@@ -1535,24 +1844,54 @@ function AllSkillsTab(){
 
   const revealBoardCount = state.node.street === 'preflop' ? 0 : state.node.street === 'flop' ? 3 : state.node.street === 'turn' ? 4 : 5;
   const boardNow = state.meta.boardCards.slice(0, revealBoardCount);
-  const summary = state.meta.ended ? allSkillsSummarize(state.meta.history) : null;
+  const summary = state.meta.ended ? allSkillsSummarize(state.meta) : null;
 
   const act = (action) => {
     if(state.result) return;
-    const scored = allSkillsScoreAction(state.node, action);
-    const resolved = allSkillsResolve(state.meta, state.node, scored);
-    setStats(s => ({...s, correct: s.correct + (scored.isCorrect ? 1 : 0), total: s.total + 1, points: asRound((s.points ?? 0) + scored.score, 100), hands: s.hands + (resolved.ended ? 1 : 0)}));
+
+    const scoredBase = allSkillsScoreAction(state.node, action);
+    const fatalInfo = allSkillsDetectFatal(state.node, action);
+    const scored = fatalInfo.isFatal
+      ? {...scoredBase, isCorrect: false, score: 0, reason: `${fatalInfo.message} ${scoredBase.reason}`}
+      : scoredBase;
+
+    const resolved = allSkillsResolve(state.meta, state.node, scored, fatalInfo);
+    const isCorrect = scored.isCorrect && !resolved.fatal;
+    const score = resolved.fatal ? 0 : scored.score;
+
+    setStats(s => ({
+      ...s,
+      correct: s.correct + (isCorrect ? 1 : 0),
+      total: s.total + 1,
+      points: asRound((s.points ?? 0) + score, 100),
+      hands: s.hands + (resolved.ended ? 1 : 0)
+    }));
+
     setStreak(prev => {
-      const next = scored.isCorrect ? prev + 1 : 0;
-      if(next > best) setBest(next);
+      const next = isCorrect ? prev + 1 : 0;
+      setBest(b => Math.max(b, next));
       return next;
     });
+
     setWeakness(w => {
       const k = state.node.focusKey;
       const cur = w[k] ?? {correct: 0, total: 0, misses: 0};
-      return {...w, [k]: {correct: cur.correct + (scored.isCorrect ? 1 : 0), total: cur.total + 1, misses: cur.misses + (scored.isCorrect ? 0 : 1)}};
+      const missDelta = (isCorrect ? 0 : 1) + (resolved.fatal ? 1 : 0);
+      return {...w, [k]: {correct: cur.correct + (isCorrect ? 1 : 0), total: cur.total + 1, misses: cur.misses + missDelta}};
     });
-    setState(s => ({...s, meta: resolved.meta, result: {...scored, ended: resolved.ended, handText: resolved.text}}));
+
+    setState(s => ({
+      ...s,
+      meta: resolved.meta,
+      result: {
+        ...scored,
+        isCorrect,
+        score,
+        ended: resolved.ended,
+        fatal: resolved.fatal,
+        handText: resolved.text,
+      }
+    }));
   };
 
   const next = () => {
@@ -1561,7 +1900,7 @@ function AllSkillsTab(){
       if(state.meta.ended){
         const m = createAllSkillsHandMeta(weakness);
         setState({meta: m, node: allSkillsBuildNode(m), result: null});
-      }else{
+      } else {
         setState(s => ({...s, node: allSkillsBuildNode(s.meta), result: null}));
       }
       setFade(true);
@@ -1570,23 +1909,26 @@ function AllSkillsTab(){
 
   const showImmediate = !examMode || state.result?.ended;
   const focusCue = allSkillsNextFocus(weakness);
-  const villainName = AS_VILLAIN_PROFILES[state.meta.villainType].name;
+  const villainName = state.meta.villainModel.name;
+  const playerText = state.meta.numPlayers === 2 ? 'Heads-up pot' : `${state.meta.numPlayers}-way pot — tighten up here`;
+
   let situationText = '';
   if(state.node.street === 'preflop'){
     if(state.node.spotType === 'preflop_open'){
-      situationText = `Action folds to you preflop against a ${villainName} in ${state.meta.heroPos === 'ip' ? 'late position' : 'early/blind context'}.`;
-    }else{
-      situationText = `${villainName} opens preflop ${state.node.sizeBucket} (${state.node.betBb}bb). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
+      situationText = `Action folds to you preflop. Villain profile behind: ${villainName}.`;
+    } else {
+      situationText = `${villainName} opens ${state.node.sizeBucket} to ${state.node.betBb}bb. You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
     }
-  }else if(state.node.spotType === 'checked_to_hero'){
-    situationText = `${villainName} checks. Choose your continuation bet size (or check) on a ${state.node.boardTexture} board.`;
-  }else{
+  } else if(state.node.spotType === 'checked_to_hero'){
+    situationText = `${villainName} checks on a ${state.node.boardTexture} board. Pick your continuation action.`;
+  } else {
     situationText = `${villainName} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} board.`;
   }
 
   return (
     <div>
       <StatsBar stats={stats} streak={streak} best={best}/>
+
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,gap:10}}>
         <div style={{fontSize:11,color:'#5d7f58',fontFamily:'sans-serif'}}>Mode: <strong style={{color:'#9bc892'}}>{examMode ? 'Exam (deferred feedback)' : 'Immediate feedback'}</strong></div>
         <button onClick={()=>setExamMode(v=>!v)} style={{padding:'7px 10px',borderRadius:8,border:'1px solid rgba(140,170,140,0.32)',background:'rgba(0,0,0,0.2)',color:'#8ab880',cursor:'pointer',fontSize:11,fontFamily:'sans-serif'}}>Toggle Exam</button>
@@ -1595,18 +1937,25 @@ function AllSkillsTab(){
       <div style={{background:'linear-gradient(155deg,#1e4a2e,#143822)',border:'2px solid rgba(90,150,90,0.18)',borderRadius:20,padding:'22px 18px',boxShadow:'0 24px 64px rgba(0,0,0,0.75)',opacity:fade?1:0,transform:fade?'translateY(0)':'translateY(8px)',transition:'opacity 0.18s ease,transform 0.18s ease'}}>
         <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:14}}>
           <span style={{background:'rgba(90,155,70,0.14)',border:'1px solid rgba(90,155,70,0.38)',color:'#78b060',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{allSkillsStreetTitle(state.node.street)}</span>
-          <span style={{background:'rgba(100,100,150,0.15)',border:'1px solid rgba(100,100,180,0.3)',color:'#9090c0',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.heroPos === 'ip' ? 'In Position' : 'Out of Position'}</span>
-          <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Villain: {AS_VILLAIN_PROFILES[state.meta.villainType].label}</span>
-          <span style={{background:'rgba(70,120,120,0.15)',border:'1px solid rgba(70,120,120,0.32)',color:'#78a8a8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.stackBb}bb eff</span>
+          <span style={{background:'rgba(100,100,150,0.15)',border:'1px solid rgba(100,100,180,0.3)',color:'#9090c0',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Pot {state.node.potBb}bb</span>
+          <span style={{background:'rgba(70,120,120,0.15)',border:'1px solid rgba(70,120,120,0.32)',color:'#78a8a8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.stackLeftBb}bb stack</span>
+          <span style={{background:'rgba(120,100,170,0.15)',border:'1px solid rgba(120,100,170,0.32)',color:'#b0a0d0',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.heroPos === 'ip' ? 'In Position' : 'Out of Position'}</span>
+          <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Villain: {state.meta.villainModel.label}</span>
+          {state.meta.numPlayers > 2 && <span style={{background:'rgba(100,100,150,0.18)',border:'1px solid rgba(120,120,190,0.34)',color:'#aab0dd',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>👥 {state.meta.numPlayers}-way</span>}
         </div>
 
         <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:16,borderLeft:'3px solid #507848'}}>
           <div style={{fontSize:9,color:'#3d6040',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:7}}>Situation</div>
           <div style={{fontSize:13,color:'#c8e8b0',fontFamily:'sans-serif',lineHeight:1.6}}>{situationText}</div>
-          <div style={{fontSize:11,color:'#7fa37a',marginTop:8,fontFamily:'sans-serif'}}>Hero class: <strong style={{color:'#9bc892'}}>{state.node.handClass}</strong> · Pot: <strong style={{color:'#ede0c0'}}>{state.node.potBb}bb</strong></div>
+          <div style={{fontSize:11,color:'#7fa37a',marginTop:8,fontFamily:'sans-serif'}}>{playerText}</div>
+          {state.node.spotType === 'facing_bet' && (
+            <div style={{fontSize:11,color:'#86a882',marginTop:6,fontFamily:'sans-serif'}}>
+              Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}%
+            </div>
+          )}
         </div>
 
-        <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:18}}>
+        <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:18,flexWrap:'wrap'}}>
           <div>
             <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Hero</div>
             <div style={{display:'flex',gap:6}}>{state.meta.heroCards.map((c,i)=><PlayingCard key={`${state.meta.id}-h-${i}`} r={c.r} s={c.s} hero={true}/>)}</div>
@@ -1614,7 +1963,9 @@ function AllSkillsTab(){
           <div>
             <div style={{fontSize:9,color:'#3d6040',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8,textAlign:'center'}}>Board</div>
             <div style={{display:'flex',gap:6}}>
-              {boardNow.length > 0 ? boardNow.map((c,i)=><PlayingCard key={`${state.meta.id}-b-${i}`} r={c.r} s={c.s} hero={false}/>) : <div style={{fontSize:12,color:'#507848',fontFamily:'sans-serif',paddingTop:30}}>No board cards yet</div>}
+              {boardNow.length > 0
+                ? boardNow.map((c,i)=><PlayingCard key={`${state.meta.id}-b-${i}`} r={c.r} s={c.s} hero={false}/>)
+                : <div style={{fontSize:12,color:'#507848',fontFamily:'sans-serif',paddingTop:30}}>No board cards yet</div>}
             </div>
           </div>
         </div>
@@ -1633,22 +1984,29 @@ function AllSkillsTab(){
           </>
         ) : (
           <>
-            <div style={{textAlign:'center',padding:'14px',borderRadius:12,marginBottom:14,background:showImmediate ? (state.result.isCorrect?'rgba(50,130,50,0.15)':'rgba(160,45,45,0.15)') : 'rgba(70,90,120,0.16)',border:`1px solid ${showImmediate ? (state.result.isCorrect?'rgba(50,200,50,0.28)':'rgba(200,50,50,0.28)') : 'rgba(120,150,200,0.28)'}`}}>
-              <div style={{fontSize:24,marginBottom:2}}>{showImmediate ? (state.result.isCorrect ? '✓' : '✗') : '…'}</div>
-              <div style={{fontSize:15,fontWeight:700,color:showImmediate ? (state.result.isCorrect?'#68cc68':'#cc6868') : '#80a0c8',fontFamily:'sans-serif'}}>
-                {showImmediate ? (state.result.isCorrect ? 'Correct' : `Incorrect — best: ${allSkillsActionLabel(state.result.bestAction)}`) : 'Decision recorded (exam mode)'}
+            <div style={{textAlign:'center',padding:'14px',borderRadius:12,marginBottom:14,background:showImmediate ? (state.result.fatal ? 'rgba(180,120,30,0.17)' : state.result.isCorrect?'rgba(50,130,50,0.15)':'rgba(160,45,45,0.15)') : 'rgba(70,90,120,0.16)',border:`1px solid ${showImmediate ? (state.result.fatal ? 'rgba(200,150,40,0.34)' : state.result.isCorrect?'rgba(50,200,50,0.28)':'rgba(200,50,50,0.28)') : 'rgba(120,150,200,0.28)'}`}}>
+              <div style={{fontSize:24,marginBottom:2}}>{showImmediate ? (state.result.fatal ? '⚠' : state.result.isCorrect ? '✓' : '✗') : '…'}</div>
+              <div style={{fontSize:15,fontWeight:700,color:showImmediate ? (state.result.fatal ? '#d9a24a' : state.result.isCorrect?'#68cc68':'#cc6868') : '#80a0c8',fontFamily:'sans-serif'}}>
+                {showImmediate
+                  ? (state.result.fatal
+                    ? 'Fatal error — hand score will be capped'
+                    : state.result.isCorrect
+                      ? 'Correct'
+                      : `Incorrect — best: ${allSkillsActionLabel(state.result.bestAction)}`)
+                  : 'Decision recorded (exam mode)'}
               </div>
             </div>
 
             {showImmediate && (
               <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:12}}>
-                <div style={{fontSize:9,color:'#3a6038',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8}}>Why</div>
-                <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6}}>{state.result.reason}</div>
+                <div style={{fontSize:9,color:'#3a6038',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8}}>Feedback</div>
+                <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6,marginBottom:8}}>{state.result.reason}</div>
+                <div style={{fontSize:10,color:'#70946b',fontFamily:'sans-serif'}}>Skill tag: {state.result.skillTag}</div>
               </div>
             )}
 
             <div style={{fontSize:12,color:'#6f926b',marginBottom:12,fontFamily:'sans-serif',textAlign:'center'}}>{state.result.handText}</div>
-            <button onClick={next} style={{width:'100%',padding:'13px',borderRadius:10,cursor:'pointer',background:'rgba(90,150,80,0.08)',border:'1px solid rgba(90,150,80,0.28)',color:'#78b060',fontSize:14,fontWeight:600,letterSpacing:1,fontFamily:'sans-serif'}}>{state.result.ended ? 'Next Hand →' : 'Next Decision →'}</button>
+            <button onClick={next} style={{width:'100%',padding:'13px',borderRadius:10,cursor:'pointer',background:'rgba(90,150,80,0.08)',border:'1px solid rgba(90,150,80,0.28)',color:'#78b060',fontSize:14,fontWeight:600,letterSpacing:1,fontFamily:'sans-serif'}}>{state.result.ended ? 'Next Hand →' : 'Continue →'}</button>
           </>
         )}
       </div>
@@ -1656,13 +2014,20 @@ function AllSkillsTab(){
       {summary && (
         <div style={{marginTop:16,background:'rgba(0,0,0,0.2)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'12px 16px',fontFamily:'sans-serif'}}>
           <div style={{fontSize:9,color:'#2e4a2c',letterSpacing:3,textTransform:'uppercase',marginBottom:8}}>Hand Summary</div>
-          <div style={{fontSize:13,color:'#9bc892',marginBottom:8}}>Score: <strong style={{color:'#ede0c0'}}>{summary.points.toFixed(2)}</strong> / {summary.total}</div>
-          {Object.entries(summary.breakdown).map(([k, v]) => (
-            <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#6f8f6b',marginBottom:4}}>
-              <span>{k}</span>
-              <span>{v.points.toFixed(2)} / {v.total}</span>
-            </div>
-          ))}
+          <div style={{fontSize:13,color:'#9bc892',marginBottom:8}}>Overall score: <strong style={{color:'#ede0c0'}}>{summary.points.toFixed(1)}</strong> / {summary.maxPoints.toFixed(1)}</div>
+          {summary.fatal && <div style={{fontSize:11,color:'#d8a454',marginBottom:8}}>Fatal cap applied: max {summary.fatalCapPoints.toFixed(1)} points this hand.</div>}
+
+          <div style={{display:'flex',justifyContent:'space-between',gap:8,fontSize:11,color:'#8aaa84',marginBottom:10,flexWrap:'wrap'}}>
+            {[['Preflop', summary.streetMarks.preflop], ['Flop', summary.streetMarks.flop], ['Turn', summary.streetMarks.turn], ['River', summary.streetMarks.river]].map(([name, mark]) => (
+              <div key={name} style={{display:'flex',alignItems:'center',gap:4}}>
+                <span>{name}</span>
+                <span style={{color:'#ede0c0',fontWeight:700}}>{mark}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{fontSize:11,color:'#7fa37a',marginBottom:6}}>Biggest leak this hand: <span style={{color:'#b0d2a6'}}>{summary.biggestLeak}</span></div>
+          <div style={{fontSize:11,color:'#7fa37a'}}>Targeted cue: <span style={{color:'#b0d2a6'}}>{summary.improvementCue}</span></div>
         </div>
       )}
 
