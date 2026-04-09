@@ -1135,7 +1135,6 @@ const AS_IP_BIAS_THRESHOLD = 0.45;
 const AS_MIN_START_POT_BB = 3;
 const AS_START_POT_RANGE_BB = 5;
 const AS_DEEP_STREET_FOLD_MULT = 0.5;
-let AS_HAND_SEQ = 0;
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
   lag: {label: 'LAG', name: 'Loose-Aggressive', baseWeight: 1.05, aggression: 0.75, looseness: 0.7, foldToAggro: 0.31, small: 0.22, medium: 0.45, large: 0.33},
@@ -1207,8 +1206,10 @@ function allSkillsPickTargetStreet(){
 }
 
 function allSkillsNextHandId(){
-  AS_HAND_SEQ += 1;
-  return `${AS_HAND_SEQ}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  if(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'){
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 function createAllSkillsHandMeta(weakness = {}){
@@ -1694,7 +1695,10 @@ function PositionsTab(){
           <text x={160} y={102} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.12)" fontFamily="Georgia,serif" letterSpacing={2} style={{userSelect:'none'}}>TEXAS</text>
           <text x={160} y={114} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.12)" fontFamily="Georgia,serif" letterSpacing={2} style={{userSelect:'none'}}>HOLD'EM</text>
           {seatRoles.map((role,i)=>{
-            const{x,y}=tableSeatXY(i);
+            // Seat points are derived from the table SVG center (160,108) and ellipse radii (125,84).
+            const rad = ((SEAT_ANGLES[i] - 90) * Math.PI) / 180;
+            const x = 160 + 125 * Math.cos(rad);
+            const y = 108 + 84 * Math.sin(rad);
             const info=ROLE_INFO[role];
             const isBtn=btnSeat===i;
             const isSel=selSeat===i;
