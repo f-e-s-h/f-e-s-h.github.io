@@ -2088,6 +2088,22 @@ function allSkillsTightenTier(tier, numPlayers){
   return order[Math.min(idx + bump, order.length - 1)];
 }
 
+function allSkillsPreflopDecisionTier(node){
+  if(node?.street !== 'preflop') return node?.handClass ?? 'medium';
+
+  const order = ['premium', 'strong', 'medium', 'speculative', 'weak'];
+  const idx = order.indexOf(node.handClass);
+  if(idx === -1) return 'medium';
+
+  if(node.spotType === 'preflop_open'){
+    // First-in spots should tighten with field size, but not as aggressively as facing-open defense.
+    const bump = Math.max(Math.min((node.numPlayers ?? 2) - 2, 1), 0);
+    return order[Math.min(idx + bump, order.length - 1)];
+  }
+
+  return allSkillsTightenTier(node.handClass, node.numPlayers);
+}
+
 function allSkillsEstimateEquity(node){
   let equity = 0;
   if(node.postflopEval && node.street !== 'preflop') equity = node.postflopEval.equity;
@@ -2265,12 +2281,17 @@ function allSkillsMapPreflopDecision(node, decision){
 function allSkillsBaselineDecision(node){
   const ip = node.heroPos === 'ip';
   if(node.street === 'preflop'){
-    const tightTier = allSkillsTightenTier(node.handClass, node.numPlayers);
+    const tightTier = allSkillsPreflopDecisionTier(node);
     const raiseAmt = Math.max(2, Math.round(node.raiseOpenBb ?? 3));
     const decision = getDecision(tightTier, node.preflopPos, node.preflopSituation, raiseAmt);
     const mapped = allSkillsMapPreflopDecision(node, decision);
-    const reason = node.numPlayers > 2 ? `${mapped.reason} ${node.numPlayers}-way pot — tighten up here.` : mapped.reason;
-    return {action: mapped.action, reason};
+    const pressureNote = node.numPlayers > 2
+      ? (node.spotType === 'preflop_open'
+        ? `${Math.max(node.numPlayers - 1, 1)} players behind — tighten up here.`
+        : `${node.numPlayers}-way pot — tighten up here.`)
+      : '';
+    const reason = pressureNote ? `${mapped.reason} ${pressureNote}` : mapped.reason;
+    return {action: mapped.action, reason, decisionTier: tightTier};
   }
 
   if(node.spotType === 'checked_to_hero'){
@@ -2407,6 +2428,9 @@ function allSkillsStepAction(node, action, direction){
 
 function allSkillsContextCue(node){
   const handLabel = {
+    premium: 'a premium hand',
+    medium: 'a medium-strength hand',
+    speculative: 'a speculative hand',
     air: 'air',
     draw: 'a draw',
     marginal: 'a marginal made hand',
@@ -2415,6 +2439,8 @@ function allSkillsContextCue(node){
     weak: 'a weak hand',
   };
 
+  const handTier = node.street === 'preflop' ? allSkillsPreflopDecisionTier(node) : node.handClass;
+
   const spot = node.street === 'preflop'
     ? (node.spotType === 'preflop_open' ? 'first-in preflop' : `preflop defense versus a ${node.sizeBucket ?? 'standard'} open`)
     : (node.spotType === 'checked_to_hero'
@@ -2422,8 +2448,31 @@ function allSkillsContextCue(node){
       : `facing a ${node.sizeBucket ?? 'standard'} bet on the ${node.street}`);
 
   const texture = node.street === 'preflop' ? 'preflop dynamics' : `${node.boardTexture} board`;
-  const players = node.numPlayers > 2 ? `${node.numPlayers}-way pot` : 'heads-up pot';
-  return `${spot} with ${handLabel[node.handClass] ?? node.handClass} on a ${texture} in a ${players}.`;
+  const textureClause = node.street === 'preflop' ? `in ${texture}` : `on a ${texture}`;
+  const players = node.street === 'preflop' && node.spotType === 'preflop_open'
+    ? `${Math.max(node.numPlayers, 2)}-max table with ${Math.max((node.numPlayers ?? 2) - 1, 1)} behind`
+    : (node.numPlayers > 2 ? `${node.numPlayers}-way pot` : 'heads-up pot');
+  return `${spot} with ${handLabel[handTier] ?? handTier} ${textureClause} in a ${players}.`;
+}
+
+function allSkillsBuildSituationText(node, meta, heroSeat, villainSeat, villainName){
+  const heroSeatInfo = POS_INFO[heroSeat];
+  const villainSeatInfo = POS_INFO[villainSeat];
+
+  if(node.street === 'preflop'){
+    if(node.spotType === 'preflop_open'){
+      return `You are first to act preflop in ${heroSeatInfo?.short ?? heroSeat.toUpperCase()}. ${villainName} is the likely defender from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}.`;
+    }
+
+    const callerNote = node.preflopSituation === 'raise_caller' ? ' One player has already called the open.' : '';
+    return `${villainName} opens ${node.sizeBucket} to ${node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${meta.heroPos === 'ip' ? 'IP' : 'OOP'}).${callerNote}`;
+  }
+
+  if(node.spotType === 'checked_to_hero'){
+    return `${villainName} checks on a ${node.boardTexture} board. Pick your continuation action.`;
+  }
+
+  return `${villainName} bets ${node.sizeBucket} (${node.betBb}bb) into ${node.potBb}bb on a ${node.boardTexture} board.`;
 }
 
 function allSkillsFallbackExploitReason(node){
@@ -3058,20 +3107,7 @@ function AllSkillsTab(){
     }
     setPositionMapOpen(true);
   };
-
-  let situationText = '';
-  if(state.node.street === 'preflop'){
-    if(state.node.spotType === 'preflop_open'){
-      situationText = `Action folds to you preflop in ${heroSeatInfo?.short ?? heroSeat.toUpperCase()}. ${villainName} is the likely defender from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}.`;
-    } else {
-      const callerNote = state.node.preflopSituation === 'raise_caller' ? ' One player has already called the open.' : '';
-      situationText = `${villainName} opens ${state.node.sizeBucket} to ${state.node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${state.meta.heroPos === 'ip' ? 'IP' : 'OOP'}).${callerNote}`;
-    }
-  } else if(state.node.spotType === 'checked_to_hero'){
-    situationText = `${villainName} checks on a ${state.node.boardTexture} board. Pick your continuation action.`;
-  } else {
-    situationText = `${villainName} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} board.`;
-  }
+  const situationText = allSkillsBuildSituationText(state.node, state.meta, heroSeat, villainSeat, villainName);
 
   return (
     <div>
@@ -3268,6 +3304,11 @@ const TABS = [
 
 export const __testables = {
   genPotOddsScenario,
+  allSkillsMatchTierFromCards,
+  allSkillsPreflopDecisionTier,
+  allSkillsBaselineDecision,
+  allSkillsContextCue,
+  allSkillsBuildSituationText,
   postflopFamilyWeight,
   postflopFamilyRotation,
   postflopClassifyFamily,
