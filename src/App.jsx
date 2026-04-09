@@ -1124,6 +1124,8 @@ function BetSizingTab(){
 const AS_STREETS = ['preflop', 'flop', 'turn', 'river'];
 const AS_STACKS = [40, 60, 80, 100, 120];
 const AS_TEXTURES = ['dry', 'semi-wet', 'wet', 'paired', 'monotone'];
+const AS_FADE_DELAY_MS = 130;
+let AS_HAND_SEQ = 0;
 const AS_VILLAIN_PROFILES = {
   tag: {label: 'TAG', name: 'Tight-Aggressive', baseWeight: 1.15, aggression: 0.58, looseness: 0.35, foldToAggro: 0.46, small: 0.25, medium: 0.5, large: 0.25},
   lag: {label: 'LAG', name: 'Loose-Aggressive', baseWeight: 1.05, aggression: 0.75, looseness: 0.7, foldToAggro: 0.31, small: 0.22, medium: 0.45, large: 0.33},
@@ -1150,19 +1152,21 @@ function allSkillsStreetTitle(street){ return street === 'preflop' ? 'Preflop' :
 function allSkillsIsAggro(action){ return action.startsWith('bet') || action.startsWith('raise'); }
 function allSkillsSizeBucket(action){
   if(action.endsWith('small')) return 'small';
-  if(action.endsWith('large')) return 'large';
   if(action.endsWith('medium')) return 'medium';
+  if(action.endsWith('large')) return 'large';
   return null;
 }
 
 function weightedPickFromEntries(entries){
-  const total = entries.reduce((s, [, w]) => s + w, 0);
+  const safeEntries = entries.map(([k, w]) => [k, Number.isFinite(w) && w > 0 ? w : 0]);
+  const total = safeEntries.reduce((s, [, w]) => s + w, 0);
+  if(total <= 0) return entries[0]?.[0];
   let r = Math.random() * total;
-  for(const [key, w] of entries){
+  for(const [key, w] of safeEntries){
     r -= w;
     if(r <= 0) return key;
   }
-  return entries[entries.length - 1][0];
+  return safeEntries[safeEntries.length - 1][0];
 }
 
 function allSkillsPickVillainType(){
@@ -1197,7 +1201,7 @@ function createAllSkillsHandMeta(weakness = {}){
   const boardCards = deck.splice(0, 5);
   const villainType = allSkillsPickVillainType();
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `${++AS_HAND_SEQ}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     villainType,
     heroPos: Math.random() > 0.45 ? 'ip' : 'oop',
     stackBb: randItem(AS_STACKS),
@@ -1534,12 +1538,24 @@ function AllSkillsTab(){
         setState(s => ({...s, node: allSkillsBuildNode(s.meta), result: null}));
       }
       setFade(true);
-    }, 130);
+    }, AS_FADE_DELAY_MS);
   };
 
   const showImmediate = !examMode || state.result?.ended;
   const focusCue = allSkillsNextFocus(weakness);
   const villainName = AS_VILLAIN_PROFILES[state.meta.villainType].name;
+  let situationText = '';
+  if(state.node.street === 'preflop'){
+    if(state.node.spotType === 'preflop_open'){
+      situationText = `Action folds to you preflop against a ${villainName} in ${state.meta.heroPos === 'ip' ? 'late position' : 'early/blind context'}.`;
+    }else{
+      situationText = `${villainName} opens preflop (${state.node.sizeBucket} sizing). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`;
+    }
+  }else if(state.node.spotType === 'checked_to_hero'){
+    situationText = `${villainName} checks. You can choose your c-bet frequency/sizing on a ${state.node.boardTexture} board.`;
+  }else{
+    situationText = `${villainName} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} board.`;
+  }
 
   return (
     <div>
@@ -1559,17 +1575,7 @@ function AllSkillsTab(){
 
         <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:16,borderLeft:'3px solid #507848'}}>
           <div style={{fontSize:9,color:'#3d6040',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:7}}>Situation</div>
-          <div style={{fontSize:13,color:'#c8e8b0',fontFamily:'sans-serif',lineHeight:1.6}}>
-            {state.node.street === 'preflop' ? (
-              state.node.spotType === 'preflop_open'
-                ? `Action folds to you preflop against a ${villainName} in ${state.meta.heroPos === 'ip' ? 'late position' : 'early/blind context'}.`
-                : `${villainName} opens preflop (${state.node.sizeBucket} sizing). You are ${state.meta.heroPos === 'ip' ? 'in position' : 'out of position'}.`
-            ) : (
-              state.node.spotType === 'checked_to_hero'
-                ? `${villainName} checks. You can choose your c-bet frequency/sizing on a ${state.node.boardTexture} board.`
-                : `${villainName} bets ${state.node.sizeBucket} (${state.node.betBb}bb) into ${state.node.potBb}bb on a ${state.node.boardTexture} board.`
-            )}
-          </div>
+          <div style={{fontSize:13,color:'#c8e8b0',fontFamily:'sans-serif',lineHeight:1.6}}>{situationText}</div>
           <div style={{fontSize:11,color:'#7fa37a',marginTop:8,fontFamily:'sans-serif'}}>Hero class: <strong style={{color:'#9bc892'}}>{state.node.handClass}</strong> · Pot: <strong style={{color:'#ede0c0'}}>{state.node.potBb}bb</strong></div>
         </div>
 
