@@ -415,6 +415,10 @@ const PREFLOP_ORDER = ['utg', 'utg1', 'hj', 'co', 'btn', 'sb', 'bb'];
 const NUM_SEATS = 7;
 const SEAT_ANGLES = Array.from({length: NUM_SEATS}, (_, i) => (i * 360) / NUM_SEATS);
 const ROLE_OFFSETS = ['btn', 'sb', 'bb', 'utg', 'utg1', 'hj', 'co'];
+const TABLE_CENTER_X = 160;
+const TABLE_CENTER_Y = 108;
+const TABLE_SEAT_RADIUS_X = 125;
+const TABLE_SEAT_RADIUS_Y = 84;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SHARED UI COMPONENTS
@@ -1209,7 +1213,8 @@ function allSkillsNextHandId(){
   if(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'){
     return crypto.randomUUID();
   }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  const hiRes = typeof performance !== 'undefined' ? Math.round(performance.now()).toString(36) : '0';
+  return `${Date.now().toString(36)}-${hiRes}-${Math.random().toString(36).slice(2, 16)}`;
 }
 
 function createAllSkillsHandMeta(weakness = {}){
@@ -1462,7 +1467,8 @@ function allSkillsResolve(meta, node, scored){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
     let foldChance = clamp(villain.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.8);
-    if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT; // bias some hands deeper for turn/river coverage
+    // Make villain slightly stickier through the target street so more reps reach later streets.
+    if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT;
     if(Math.random() < foldChance){
       nextMeta = {...nextMeta, ended: true};
       text = 'Villain folds to pressure. Hand ends.';
@@ -1695,10 +1701,10 @@ function PositionsTab(){
           <text x={160} y={102} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.12)" fontFamily="Georgia,serif" letterSpacing={2} style={{userSelect:'none'}}>TEXAS</text>
           <text x={160} y={114} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,0.12)" fontFamily="Georgia,serif" letterSpacing={2} style={{userSelect:'none'}}>HOLD'EM</text>
           {seatRoles.map((role,i)=>{
-            // Seat points are derived from the table SVG center (160,108) and ellipse radii (125,84).
+            // Seat points are derived from the table SVG center and seat ellipse radii.
             const rad = ((SEAT_ANGLES[i] - 90) * Math.PI) / 180;
-            const x = 160 + 125 * Math.cos(rad);
-            const y = 108 + 84 * Math.sin(rad);
+            const x = TABLE_CENTER_X + TABLE_SEAT_RADIUS_X * Math.cos(rad);
+            const y = TABLE_CENTER_Y + TABLE_SEAT_RADIUS_Y * Math.sin(rad);
             const info=ROLE_INFO[role];
             const isBtn=btnSeat===i;
             const isSel=selSeat===i;
@@ -1768,7 +1774,7 @@ function PositionsTab(){
 
 
 export default function PokerTrainer(){
-  const [tab, setTab] = useState('allskills');
+  const [tab, setTab] = useLocalStorageState('poker_active_tab', 'allskills');
   const titles = {allskills: 'All Skills Trainer', potodds: 'Pot Odds Trainer', preflop: 'Preflop Trainer', postflop: 'Postflop (C-Bet) Trainer', sizing: 'Bet Sizing', positions: 'Table Positions'};
 
   return (
