@@ -5,6 +5,7 @@ const {
   allSkillsBestFive,
   allSkillsEvaluatePostflopCards,
   allSkillsEstimateEquity,
+  allSkillsBaselineDecision,
 } = __testables;
 
 function card(r, s){
@@ -129,5 +130,33 @@ describe('hand evaluation and equity', () => {
     expect(fourWay.potOdds).toBe(25);
     expect(hu.effectiveEquity).toBeGreaterThan(threeWay.effectiveEquity);
     expect(threeWay.effectiveEquity).toBeGreaterThan(fourWay.effectiveEquity);
+  });
+
+  it('calls marginal hands facing medium bets when discounted equity clears price', () => {
+    const decision = allSkillsBaselineDecision({
+      street: 'flop',
+      spotType: 'facing_bet',
+      handClass: 'marginal',
+      sizeBucket: 'medium',
+      effectiveEquity: 36,
+      potOdds: 37,
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+    });
+
+    expect(decision.action).toBe('fold');
+
+    const pricedDecision = allSkillsBaselineDecision({
+      street: 'flop',
+      spotType: 'facing_bet',
+      handClass: 'marginal',
+      sizeBucket: 'medium',
+      effectiveEquity: 38,
+      potOdds: 37,
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+    });
+
+    expect(pricedDecision.action).toBe('call');
   });
 });

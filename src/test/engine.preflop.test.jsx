@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { __testables } from '../App.jsx';
 
 const {
+  genPreflopScenario,
+  createAllSkillsHandMeta,
+  allSkillsBuildNode,
   allSkillsMatchTierFromCards,
   allSkillsPreflopDecisionTier,
   allSkillsBaselineDecision,
+  allSkillsExploitDecision,
   allSkillsContextCue,
   allSkillsBuildSituationText,
 } = __testables;
@@ -13,9 +17,18 @@ function card(r, s){
   return {r, s};
 }
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('preflop consistency and wording', () => {
   it('classifies KJs suited as medium from raw cards', () => {
     const tier = allSkillsMatchTierFromCards([card(13, 'h'), card(11, 'h')]);
+    expect(tier).toBe('medium');
+  });
+
+  it('classifies KTs suited as medium from raw cards', () => {
+    const tier = allSkillsMatchTierFromCards([card(13, 'd'), card(10, 'd')]);
     expect(tier).toBe('medium');
   });
 
@@ -85,5 +98,70 @@ describe('preflop consistency and wording', () => {
     expect(text).toContain('first to act preflop');
     expect(text).toContain('likely defender');
     expect(text).not.toMatch(/Action folds to you preflop/i);
+  });
+
+  it('uses first-to-act wording in legacy preflop generator unopened spots', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const scenario = genPreflopScenario({}, {});
+
+    expect(scenario.situation).toBe('unopened');
+    expect(scenario.situationDesc).toContain('first to act preflop');
+    expect(scenario.situationDesc).not.toContain('Action folds to you');
+  });
+
+  it('keeps all-skills generated hands in heads-up mode', () => {
+    for(let i = 0; i < 12; i++){
+      const meta = createAllSkillsHandMeta({});
+      expect(meta.numPlayers).toBe(2);
+    }
+  });
+
+  it('prevents impossible raise-caller preflop states', () => {
+    const node = allSkillsBuildNode({
+      streetIndex: 0,
+      focus: {street: 'preflop', spotType: 'preflop_facing_open'},
+      heroCards: [card(11, 'd'), card(9, 'd')],
+      boardCards: [card(14, 's'), card(7, 'c'), card(3, 'h'), card(6, 's'), card(2, 'd')],
+      villainType: 'lag',
+      villainModel: {label: 'LAG', aggression: 0.75, looseness: 0.7, foldToAggro: 0.31, small: 0.22, medium: 0.45, large: 0.33},
+      numPlayers: 4,
+      activeOpponents: 3,
+      heroPos: 'ip',
+      heroSeat: 'co',
+      villainSeat: 'hj',
+      stackLeftBb: 100,
+      currentPotBb: 8,
+      history: [],
+      ended: false,
+    });
+
+    expect(node.numPlayers).toBe(2);
+    expect(node.preflopSituation).toBe('raise');
+    expect(node.preflopSituation).not.toBe('raise_caller');
+  });
+
+  it('flags maniac preflop exploit trigger instead of neutral fallback wording', () => {
+    const node = {
+      street: 'preflop',
+      spotType: 'preflop_facing_open',
+      handClass: 'medium',
+      preflopPos: 'btn',
+      preflopSituation: 'raise',
+      raiseOpenBb: 3.3,
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-large'],
+      heroPos: 'ip',
+      villainType: 'maniac',
+      villainLabel: 'Maniac',
+      numPlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('call');
+    expect(exploit.action).toBe('call');
+    expect(exploit.reason).toMatch(/Exploit trigger active|Maniac/);
+    expect(exploit.reason).not.toContain('No exploit adjustment is selected');
   });
 });
