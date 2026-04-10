@@ -140,7 +140,7 @@ Implement a solver-backed basis-of-truth for covered postflop spots while preser
 
 Roadmap assumes a precompute-first approach.
 
-## Phase 0: Alignment and Contracts (Week 1)
+## Phase 0: Alignment and Contracts 
 
 Goals:
 
@@ -159,7 +159,7 @@ Exit criteria:
 - Contract approved and documented.
 - No unresolved ambiguity in action mapping.
 
-## Phase 1: Offline Solver Pipeline Prototype (Weeks 2-3)
+## Phase 1: Offline Solver Pipeline Prototype 
 
 Goals:
 
@@ -176,7 +176,7 @@ Exit criteria:
 - Artifacts generated reproducibly.
 - Data loads cleanly in a standalone validator script.
 
-## Phase 2: Runtime Loader and Shadow Evaluation (Weeks 4-5)
+## Phase 2: Runtime Loader and Shadow Evaluation 
 
 Goals:
 
@@ -193,7 +193,7 @@ Exit criteria:
 - Existing UX remains unchanged.
 - Shadow mismatch report is available and actionable.
 
-## Phase 3: Scoring Integration for Covered Spots (Weeks 6-7)
+## Phase 3: Scoring Integration for Covered Spots 
 
 Goals:
 
@@ -210,7 +210,7 @@ Exit criteria:
 - Covered spots grade from solver truth.
 - Uncovered spots safely fall back to current heuristic logic.
 
-## Phase 4: Coverage Expansion and Calibration (Weeks 8-9)
+## Phase 4: Coverage Expansion and Calibration 
 
 Goals:
 
@@ -227,7 +227,7 @@ Exit criteria:
 - Fallback rate is acceptably low for normal training flow.
 - No major contradictions between guidance and grading on covered spots.
 
-## Phase 5: Release Readiness and Documentation (Week 10)
+## Phase 5: Release Readiness and Documentation
 
 Goals:
 
