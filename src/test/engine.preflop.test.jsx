@@ -177,6 +177,27 @@ describe('preflop consistency and wording', () => {
     expect(ghostAdjusted.reason).toContain('Ghost adjustment');
   });
 
+  it('does not auto-fold weak BTN first-in opens at one ghost player', () => {
+    const node = {
+      street: 'preflop',
+      spotType: 'preflop_open',
+      handClass: 'weak',
+      preflopPos: 'btn',
+      preflopSituation: 'unopened',
+      options: ['fold', 'limp', 'raise-small', 'raise-medium'],
+      heroPos: 'ip',
+      numPlayers: 2,
+      activeGhostCount: 1,
+      effectivePlayers: 3,
+    };
+
+    const baseline = {action: 'raise-small', reason: 'Late position steal baseline.'};
+    const ghostAdjusted = allSkillsApplyGhostPressure(node, baseline);
+
+    expect(ghostAdjusted.action).toBe('raise-small');
+    expect(ghostAdjusted.ghostApplied).toBe(false);
+  });
+
   it('prevents impossible raise-caller preflop states', () => {
     const node = allSkillsBuildNode({
       streetIndex: 0,
@@ -253,5 +274,26 @@ describe('preflop consistency and wording', () => {
     expect(ghostAdjusted.action).toBe('call');
     expect(exploit.action).toBe('raise-small');
     expect(exploit.reason).toContain('Ghost-aware baseline considered');
+  });
+
+  it('uses checked-to-hero fallback wording without price-point language', () => {
+    const node = {
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'marginal',
+      boardTexture: 'dry',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      heroPos: 'ip',
+      villainType: 'nit',
+      villainLabel: 'Nit',
+      numPlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(exploit.action).toBe(baseline.action);
+    expect(exploit.reason).not.toMatch(/price point|pot odds/i);
+    expect(exploit.reason).toContain('checked-to-you');
   });
 });

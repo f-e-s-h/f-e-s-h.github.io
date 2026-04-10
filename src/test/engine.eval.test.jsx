@@ -7,6 +7,7 @@ const {
   allSkillsEstimateEquity,
   allSkillsBaselineDecision,
   allSkillsApplyGhostPressure,
+  allSkillsScoreAction,
 } = __testables;
 
 function card(r, s){
@@ -68,6 +69,17 @@ describe('hand evaluation and equity', () => {
     expect(evalResult.madeHand).toBe('full-house');
     expect(evalResult.drawOuts).toBe(0);
     expect(evalResult.equity).toBeGreaterThanOrEqual(80);
+  });
+
+  it('clears draw metadata on river even when turn-style draws exist in card shape', () => {
+    const hero = [card(14, 's'), card(13, 's')];
+    const board = [card(12, 's'), card(11, 'h'), card(2, 'd'), card(9, 'c'), card(3, 'h')];
+
+    const evalResult = allSkillsEvaluatePostflopCards(hero, board, 'river');
+
+    expect(evalResult.drawType).toBe('none');
+    expect(evalResult.drawOuts).toBe(0);
+    expect(evalResult.drawLabel).toBe('No draw');
   });
 
   it('classifies top pair with strong kicker as strong', () => {
@@ -207,5 +219,103 @@ describe('hand evaluation and equity', () => {
     expect(baseline.action).toBe('call');
     expect(ghostAdjusted.action).toBe('fold');
     expect(ghostAdjusted.reason).toContain('Ghost adjustment');
+  });
+
+  it('uses medium sizing for strong semiwet checked-to-hero spots instead of auto-large', () => {
+    const decision = allSkillsBaselineDecision({
+      street: 'turn',
+      spotType: 'checked_to_hero',
+      handClass: 'strong',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      postflopEval: {madeHand: 'overpair', heroCardsUsed: 2},
+      numPlayers: 2,
+      heroPos: 'ip',
+    });
+
+    expect(decision.action).toBe('bet-medium');
+  });
+
+  it('allows pot control for thin strong hands on paired checked-to-hero boards', () => {
+    const decision = allSkillsBaselineDecision({
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'strong',
+      boardTexture: 'paired',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      postflopEval: {madeHand: 'two-pair', heroCardsUsed: 1},
+      numPlayers: 2,
+      heroPos: 'ip',
+    });
+
+    expect(decision.action).toBe('check');
+  });
+
+  it('prefers medium draw semibluffs in heads-up semiwet checked-to-hero spots', () => {
+    const decision = allSkillsBaselineDecision({
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'draw',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      numPlayers: 2,
+      heroPos: 'ip',
+    });
+
+    expect(decision.action).toBe('bet-medium');
+  });
+
+  it('still allows large draw pressure on wet checked-to-hero boards', () => {
+    const decision = allSkillsBaselineDecision({
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'draw',
+      boardTexture: 'wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      numPlayers: 2,
+      heroPos: 'ip',
+    });
+
+    expect(decision.action).toBe('bet-large');
+  });
+
+  it('marks secondary allowed strong sizing as acceptable instead of incorrect', () => {
+    const scored = allSkillsScoreAction({
+      street: 'turn',
+      spotType: 'checked_to_hero',
+      handClass: 'strong',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      numPlayers: 2,
+      villainLabel: 'TAG',
+      skillBucket: 'value',
+      baseline: {action: 'bet-medium', reason: 'Solid value sizing line.'},
+      exploit: {action: 'bet-medium', reason: 'No exploit offset needed.'},
+    }, 'bet-large');
+
+    expect(scored.isCorrect).toBe(true);
+    expect(scored.score).toBe(0.65);
+    expect(scored.bestAction).toBe('bet-medium');
+    expect(scored.acceptableActions).toContain('bet-large');
+    expect(scored.reason).toContain('acceptable alternative');
+  });
+
+  it('does not grant aggressive alternatives when baseline and exploit both anchor to check', () => {
+    const scored = allSkillsScoreAction({
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'draw',
+      boardTexture: 'wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      numPlayers: 4,
+      villainLabel: 'LAG',
+      skillBucket: 'bluffing',
+      baseline: {action: 'check', reason: 'Multiway realization prefers check.'},
+      exploit: {action: 'check', reason: 'No exploit offset needed.'},
+    }, 'bet-large');
+
+    expect(scored.isCorrect).toBe(false);
+    expect(scored.score).toBe(0);
+    expect(scored.acceptableActions).toEqual([]);
   });
 });

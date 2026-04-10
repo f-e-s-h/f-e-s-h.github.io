@@ -1481,7 +1481,7 @@ function correctBetSize(sit){
   if(sit.strength === 'strong' && sit.numPlayers >= 3) return ['half', 'threequarter'];
   if(sit.strength === 'strong') return ['half', 'threequarter'];
   if(sit.strength === 'medium') return ['quarter', 'half'];
-  if(sit.strength === 'draw') return ['threequarter', 'pot'];
+  if(sit.strength === 'draw') return ['half', 'threequarter', 'pot'];
   return ['half'];
 }
 
@@ -2003,6 +2003,9 @@ function allSkillsEvaluatePostflopCards(heroCards, boardCards, street){
   const allCards = [...heroCards, ...boardCards];
   const best = allSkillsBestFive(allCards);
   const draw = allSkillsDrawProfile(heroCards, boardCards);
+  const drawType = street === 'river' ? 'none' : draw.type;
+  const drawOuts = street === 'river' ? 0 : draw.outs;
+  const drawLabel = street === 'river' ? 'No draw' : draw.label;
 
   const boardRanks = boardCards.map(c => c.r);
   const holeRanks = heroCards.map(c => c.r).sort((a, b) => b - a);
@@ -2038,7 +2041,7 @@ function allSkillsEvaluatePostflopCards(heroCards, boardCards, street){
     const kicker = holeRanks.find(r => r !== pairRank) ?? holeRanks[0];
     handClass = (overpair || (topPair && kicker >= 10)) ? 'strong' : 'marginal';
     madeHand = overpair ? 'overpair' : topPair ? 'top-pair' : 'pair';
-  } else if(draw.outs > 0 && street !== 'river'){
+  } else if(drawOuts > 0){
     handClass = 'draw';
     madeHand = 'draw';
   }
@@ -2047,20 +2050,20 @@ function allSkillsEvaluatePostflopCards(heroCards, boardCards, street){
   if(handClass === 'monster') equity = street === 'river' ? 86 : 76;
   else if(handClass === 'strong') equity = street === 'river' ? 68 : 58;
   else if(handClass === 'marginal') equity = street === 'river' ? 30 : 36;
-  else if(handClass === 'draw') equity = allSkillsDrawEquityFromOuts(draw.outs, street);
+  else if(handClass === 'draw') equity = allSkillsDrawEquityFromOuts(drawOuts, street);
   else equity = street === 'river' ? 8 : 14;
 
-  if(handClass !== 'draw' && draw.outs > 0){
-    const bonus = street === 'flop' ? Math.min(draw.outs, 12) * 0.4 : street === 'turn' ? Math.min(draw.outs, 12) * 0.25 : 0;
+  if(handClass !== 'draw' && drawOuts > 0){
+    const bonus = street === 'flop' ? Math.min(drawOuts, 12) * 0.4 : street === 'turn' ? Math.min(drawOuts, 12) * 0.25 : 0;
     equity += bonus;
   }
 
   return {
     handClass,
     madeHand,
-    drawType: draw.type,
-    drawOuts: draw.outs,
-    drawLabel: draw.label,
+    drawType,
+    drawOuts,
+    drawLabel,
     heroCardsUsed,
     equity: Math.round(clamp(equity, 1, 95)),
   };
@@ -2192,6 +2195,49 @@ function allSkillsSizingStrength(handClass){
   return 'air';
 }
 
+const AS_ACTION_SIZE_BANDS = {
+  'bet-small': ['minbet', 'quarter'],
+  'bet-medium': ['half'],
+  'bet-large': ['threequarter', 'pot', 'over'],
+};
+
+function allSkillsActionMatchesBands(action, bands){
+  const mappedBands = AS_ACTION_SIZE_BANDS[action] ?? [];
+  return mappedBands.some(k => bands.includes(k));
+}
+
+function allSkillsPreferredBetPriority(node){
+  if(node.handClass === 'monster'){
+    if(node.boardTexture === 'dry' || node.boardTexture === 'paired') return ['bet-medium', 'bet-large', 'check', 'bet-small'];
+    return ['bet-large', 'bet-medium', 'check', 'bet-small'];
+  }
+
+  if(node.handClass === 'strong'){
+    if(node.spotType === 'checked_to_hero'){
+      const thinPairedTwoPair = node.boardTexture === 'paired'
+        && node.postflopEval?.madeHand === 'two-pair'
+        && (node.postflopEval?.heroCardsUsed ?? 0) <= 1;
+      if(thinPairedTwoPair) return ['check', 'bet-medium', 'bet-small', 'bet-large'];
+      if(node.boardTexture === 'wet' || node.boardTexture === 'monotone') return ['bet-large', 'bet-medium', 'check', 'bet-small'];
+      return ['bet-medium', 'bet-small', 'check', 'bet-large'];
+    }
+    return ['bet-medium', 'bet-large', 'bet-small', 'check'];
+  }
+
+  if(node.handClass === 'draw'){
+    if(node.spotType === 'checked_to_hero'){
+      if(node.numPlayers > 2) return ['check', 'bet-medium', 'bet-small', 'bet-large'];
+      if(node.boardTexture === 'wet' || node.boardTexture === 'monotone') return ['bet-large', 'bet-medium', 'check', 'bet-small'];
+      return ['bet-medium', 'check', 'bet-small', 'bet-large'];
+    }
+    return ['bet-medium', 'bet-large', 'check', 'bet-small'];
+  }
+
+  if(node.handClass === 'air') return node.boardTexture === 'dry' ? ['bet-small', 'check', 'bet-medium', 'bet-large'] : ['check', 'bet-small', 'bet-medium', 'bet-large'];
+  if(node.handClass === 'marginal') return ['check', 'bet-small', 'bet-medium', 'bet-large'];
+  return ['bet-medium', 'check', 'bet-small', 'bet-large'];
+}
+
 function allSkillsPreferredBetAction(node){
   const correctBands = correctBetSize({
     bluff: node.handClass === 'air',
@@ -2199,10 +2245,43 @@ function allSkillsPreferredBetAction(node){
     strength: allSkillsSizingStrength(node.handClass),
     numPlayers: node.numPlayers,
   });
-  if(correctBands.some(k => k === 'threequarter' || k === 'pot' || k === 'over')) return node.options.includes('bet-large') ? 'bet-large' : 'bet-medium';
-  if(correctBands.includes('half')) return node.options.includes('bet-medium') ? 'bet-medium' : 'bet-small';
-  if(correctBands.includes('quarter')) return node.options.includes('bet-small') ? 'bet-small' : 'check';
-  return node.options.includes('bet-medium') ? 'bet-medium' : 'check';
+  const preferredOrder = allSkillsPreferredBetPriority(node);
+
+  for(const action of preferredOrder){
+    if(action === 'check'){
+      if(node.options.includes('check')) return 'check';
+      continue;
+    }
+    if(!node.options.includes(action)) continue;
+    if(allSkillsActionMatchesBands(action, correctBands)) return action;
+  }
+
+  if(node.options.includes('bet-medium')) return 'bet-medium';
+  if(node.options.includes('bet-small')) return 'bet-small';
+  if(node.options.includes('bet-large')) return 'bet-large';
+  if(node.options.includes('check')) return 'check';
+  return node.options[0] ?? 'check';
+}
+
+function allSkillsAcceptableActions(node){
+  if(node.spotType !== 'checked_to_hero') return [];
+  if(node.handClass !== 'strong' && node.handClass !== 'draw') return [];
+
+  const hasAggroAnchor = allSkillsIsAggro(node.baseline?.action ?? '') || allSkillsIsAggro(node.exploit?.action ?? '');
+  if(!hasAggroAnchor) return [];
+
+  const correctBands = correctBetSize({
+    bluff: node.handClass === 'air',
+    street: node.street,
+    strength: allSkillsSizingStrength(node.handClass),
+    numPlayers: node.numPlayers,
+  });
+
+  const preferredOrder = allSkillsPreferredBetPriority(node);
+  const matches = preferredOrder.filter(action => action !== 'check' && node.options.includes(action) && allSkillsActionMatchesBands(action, correctBands));
+  if(matches.length === 0) return [];
+
+  return [...new Set(matches.slice(0, 2))];
 }
 
 function allSkillsSkillBucket(node){
@@ -2572,9 +2651,33 @@ function allSkillsBuildSituationText(node, meta, heroSeat, villainSeat, villainN
 
 function allSkillsFallbackExploitReason(node){
   const context = allSkillsContextCue(node);
+  if(node.spotType === 'checked_to_hero'){
+    return randItem([
+      `No exploit adjustment is selected for this exact combo, so keep the baseline line (your default solid strategy). ${context}`,
+      `Villain profile is accounted for, but this initiative node still favors your baseline value/bluff mix. ${context}`,
+      `Exploit lane is neutral for this continuation spot, so stay with baseline strategy. ${context}`,
+    ]);
+  }
+
+  if(node.spotType === 'facing_bet'){
+    return randItem([
+      `No exploit adjustment is selected for this exact combo, so keep the baseline line (your default solid strategy). ${context}`,
+      `Villain profile is accounted for, but this hand class and price point still keep baseline best. ${context}`,
+      `Exploit lane is neutral for this defense node, so stay with baseline strategy. ${context}`,
+    ]);
+  }
+
+  if(node.spotType === 'preflop_open'){
+    return randItem([
+      `No exploit adjustment is selected for this exact combo, so keep the baseline first-in line. ${context}`,
+      `Villain profile is accounted for, but this opening node still favors baseline discipline. ${context}`,
+      `Exploit lane is neutral preflop here, so stay with baseline strategy. ${context}`,
+    ]);
+  }
+
   return randItem([
     `No exploit adjustment is selected for this exact combo, so keep the baseline line (your default solid strategy). ${context}`,
-    `Villain profile is accounted for, but this hand class and price point keep baseline best. ${context}`,
+    `Villain profile is accounted for, but this node still keeps baseline best. ${context}`,
     `Exploit lane is neutral for this node, so stay with baseline strategy. ${context}`,
   ]);
 }
@@ -2635,12 +2738,21 @@ function allSkillsApplyGhostPressure(node, baseline){
 
   if(node.street === 'preflop'){
     if(node.spotType === 'preflop_open'){
+      const lateStealSeat = node.preflopPos === 'btn' || node.preflopPos === 'co';
       if((node.handClass === 'speculative' || node.handClass === 'weak') && action !== 'fold' && node.options.includes('fold')){
-        action = 'fold';
-        ghostReason = `extra field pressure trims speculative first-in opens`;
-      } else if(node.handClass === 'medium' && ghostCount >= 2 && action.startsWith('raise') && node.options.includes('fold')){
-        action = 'fold';
-        ghostReason = `medium first-in opens are over-defended less often in crowded dynamics`;
+        const tightenThreshold = lateStealSeat ? 2 : 1;
+        if(ghostCount >= tightenThreshold){
+          action = 'fold';
+          ghostReason = lateStealSeat
+            ? `late-position steals tighten only once ghost pressure gets crowded`
+            : `extra field pressure trims speculative first-in opens`;
+        }
+      } else if(node.handClass === 'medium' && action.startsWith('raise') && node.options.includes('fold')){
+        const tightenThreshold = lateStealSeat ? 3 : 2;
+        if(ghostCount >= tightenThreshold){
+          action = 'fold';
+          ghostReason = `medium first-in opens realize less EV once too many players can continue`;
+        }
       }
     } else if(node.spotType === 'preflop_facing_open' && action === 'call' && node.options.includes('fold')){
       const tightenSpeculative = node.handClass === 'speculative' && ghostCount >= 1;
@@ -2852,19 +2964,22 @@ function allSkillsDetectFatal(node, action){
 function allSkillsScoreAction(node, action){
   const baseline = node.baseline.action;
   const exploit = node.exploit.action;
+  const acceptableActions = allSkillsAcceptableActions(node);
   const isBest = action === exploit;
   const isBaseline = action === baseline;
-  const isCorrect = isBest || isBaseline;
-  const score = isBest ? 1 : isBaseline ? 0.8 : 0;
+  const isAcceptable = !isBest && !isBaseline && acceptableActions.includes(action);
+  const isCorrect = isBest || isBaseline || isAcceptable;
+  const score = isBest ? 1 : isBaseline ? 0.8 : isAcceptable ? 0.65 : 0;
   let reason = '';
   const actionLabel = allSkillsActionLabel(action);
   const exploitLabel = allSkillsActionLabel(exploit);
 
   if(isBest) reason = `Decision: ${exploitLabel}. Principle: ${node.baseline.reason} Exploit note: ${node.exploit.reason}`;
   else if(isBaseline) reason = `Decision: ${actionLabel} (baseline-correct). Principle: baseline means your default solid strategy: ${node.baseline.reason} Exploit note: versus ${node.villainLabel}, the higher-EV adjustment was ${exploitLabel}. ${node.exploit.reason}`;
+  else if(isAcceptable) reason = `Decision: ${actionLabel} is an acceptable alternative in this spot, even if not the highest-EV line. Principle: ${node.baseline.reason} Exploit note: best line was ${exploitLabel}. ${node.exploit.reason}`;
   else reason = `Decision: ${actionLabel} was not optimal. Principle: ${node.baseline.reason} Exploit note: best line was ${exploitLabel}. ${node.exploit.reason}`;
 
-  return {action, isCorrect, score, reason, bestAction: exploit, baselineAction: baseline, skillTag: `${node.street}|${node.spotType}|${node.skillBucket}`};
+  return {action, isCorrect, score, reason, bestAction: exploit, baselineAction: baseline, acceptableActions, skillTag: `${node.street}|${node.spotType}|${node.skillBucket}`};
 }
 
 function allSkillsActionCommit(node, action){
@@ -3389,7 +3504,7 @@ function AllSkillsTab(){
               Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}% · Field: {effectivePlayers}-way
             </div>
           )}
-          {showFacingBetMath && state.node.postflopEval?.drawOuts > 0 && (
+          {showFacingBetMath && state.node.street !== 'river' && state.node.postflopEval?.drawOuts > 0 && (
             <div style={{fontSize:11,color:'#7fa37a',marginTop:4,fontFamily:'sans-serif'}}>
               Draw profile: {state.node.postflopEval.drawLabel} ({state.node.postflopEval.drawOuts} outs)
             </div>
@@ -3530,6 +3645,7 @@ export const __testables = {
   allSkillsEvaluatePostflopCards,
   allSkillsEstimateEquity,
   allSkillsDetectFatal,
+  allSkillsScoreAction,
   allSkillsActionCommit,
   allSkillsNextPot,
   allSkillsActiveOpponents,
