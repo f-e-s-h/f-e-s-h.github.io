@@ -6,6 +6,7 @@ const {
   allSkillsEvaluatePostflopCards,
   allSkillsEstimateEquity,
   allSkillsBaselineDecision,
+  allSkillsApplyGhostPressure,
 } = __testables;
 
 function card(r, s){
@@ -158,5 +159,53 @@ describe('hand evaluation and equity', () => {
     });
 
     expect(pricedDecision.action).toBe('call');
+  });
+
+  it('tightens postflop marginal defense under ghost pressure', () => {
+    const headsUpNode = {
+      street: 'flop',
+      spotType: 'facing_bet',
+      handClass: 'marginal',
+      sizeBucket: 'medium',
+      effectiveEquity: 39,
+      potOdds: 37,
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+      numPlayers: 2,
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const ghostNode = {...headsUpNode, activeGhostCount: 2, effectivePlayers: 4, effectiveEquity: 32};
+    const baseline = allSkillsBaselineDecision(headsUpNode);
+    const ghostAdjusted = allSkillsApplyGhostPressure(ghostNode, baseline);
+
+    expect(baseline.action).toBe('call');
+    expect(ghostAdjusted.action).toBe('fold');
+    expect(ghostAdjusted.ghostApplied).toBe(true);
+  });
+
+  it('tightens postflop draw continues under ghost pressure', () => {
+    const headsUpNode = {
+      street: 'turn',
+      spotType: 'facing_bet',
+      handClass: 'draw',
+      sizeBucket: 'medium',
+      effectiveEquity: 30,
+      potOdds: 28,
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+      numPlayers: 2,
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const ghostNode = {...headsUpNode, activeGhostCount: 1, effectivePlayers: 3, effectiveEquity: 24};
+    const baseline = allSkillsBaselineDecision(headsUpNode);
+    const ghostAdjusted = allSkillsApplyGhostPressure(ghostNode, baseline);
+
+    expect(baseline.action).toBe('call');
+    expect(ghostAdjusted.action).toBe('fold');
+    expect(ghostAdjusted.reason).toContain('Ghost adjustment');
   });
 });

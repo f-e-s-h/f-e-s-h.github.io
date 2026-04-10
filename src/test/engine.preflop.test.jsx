@@ -5,9 +5,12 @@ const {
   genPreflopScenario,
   createAllSkillsHandMeta,
   allSkillsBuildNode,
+  allSkillsGhostCount,
+  allSkillsEffectivePlayers,
   allSkillsMatchTierFromCards,
   allSkillsPreflopDecisionTier,
   allSkillsBaselineDecision,
+  allSkillsApplyGhostPressure,
   allSkillsExploitDecision,
   allSkillsContextCue,
   allSkillsBuildSituationText,
@@ -82,7 +85,7 @@ describe('preflop consistency and wording', () => {
     expect(cue).toContain('first-in preflop');
     expect(cue).toContain('a speculative hand');
     expect(cue).toContain('in preflop dynamics');
-    expect(cue).toContain('4-max table with 3 behind');
+    expect(cue).toContain('4-max dynamics with 3 behind');
     expect(cue).not.toContain('4-way pot');
   });
 
@@ -114,6 +117,64 @@ describe('preflop consistency and wording', () => {
       const meta = createAllSkillsHandMeta({});
       expect(meta.numPlayers).toBe(2);
     }
+  });
+
+  it('treats active ghost count as extra players beyond hero and villain', () => {
+    const meta = createAllSkillsHandMeta({});
+
+    expect(meta.numPlayers).toBe(2);
+    expect(meta.activeGhostCount).toBeGreaterThanOrEqual(0);
+    expect(meta.activeGhostCount).toBeLessThanOrEqual(3);
+    expect(meta.effectivePlayers).toBe(2 + meta.activeGhostCount);
+    expect(allSkillsGhostCount(meta)).toBe(meta.activeGhostCount);
+    expect(allSkillsEffectivePlayers(meta)).toBe(meta.effectivePlayers);
+  });
+
+  it('keeps unopened first-in text baseline-first and appends ghost context', () => {
+    const text = allSkillsBuildSituationText(
+      {
+        street: 'preflop',
+        spotType: 'preflop_open',
+        numPlayers: 2,
+        activeGhostCount: 2,
+        effectivePlayers: 4,
+      },
+      {heroPos: 'oop'},
+      'utg',
+      'bb',
+      'Maniac'
+    );
+
+    expect(text).toMatch(/^You are first to act preflop/i);
+    expect(text).toContain('Ghost pressure');
+    expect(text).toContain('4-way dynamics');
+  });
+
+  it('applies ghost pressure to tighten preflop facing-open defense', () => {
+    const node = {
+      street: 'preflop',
+      spotType: 'preflop_facing_open',
+      handClass: 'medium',
+      preflopPos: 'btn',
+      preflopSituation: 'raise',
+      raiseOpenBb: 3.3,
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-large'],
+      heroPos: 'ip',
+      villainType: 'maniac',
+      villainLabel: 'Maniac',
+      numPlayers: 2,
+      activeGhostCount: 2,
+      effectivePlayers: 4,
+    };
+
+    const baseline = allSkillsBaselineDecision({...node, activeGhostCount: 0, effectivePlayers: 2});
+    const ghostAdjusted = allSkillsApplyGhostPressure(node, baseline);
+
+    expect(baseline.action).toBe('call');
+    expect(ghostAdjusted.action).toBe('fold');
+    expect(ghostAdjusted.ghostApplied).toBe(true);
+    expect(ghostAdjusted.reason).toContain('Ghost adjustment');
   });
 
   it('prevents impossible raise-caller preflop states', () => {
@@ -163,5 +224,34 @@ describe('preflop consistency and wording', () => {
     expect(exploit.action).toBe('call');
     expect(exploit.reason).toMatch(/Exploit trigger active|Maniac/);
     expect(exploit.reason).not.toContain('No exploit adjustment is selected');
+  });
+
+  it('keeps exploit ordering explicit after ghost-adjusted baseline', () => {
+    const node = {
+      street: 'flop',
+      spotType: 'facing_bet',
+      handClass: 'strong',
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+      villainType: 'maniac',
+      villainLabel: 'Maniac',
+      numPlayers: 2,
+      activeGhostCount: 2,
+      effectivePlayers: 4,
+      potBb: 18,
+      betBb: 8,
+      effectiveEquity: 58,
+      potOdds: 31,
+    };
+
+    const baseline = allSkillsBaselineDecision({...node, activeGhostCount: 0, effectivePlayers: 2});
+    const ghostAdjusted = allSkillsApplyGhostPressure(node, baseline);
+    const exploit = allSkillsExploitDecision(node, ghostAdjusted);
+
+    expect(baseline.action).toBe('call');
+    expect(ghostAdjusted.action).toBe('call');
+    expect(exploit.action).toBe('raise-small');
+    expect(exploit.reason).toContain('Ghost-aware baseline considered');
   });
 });

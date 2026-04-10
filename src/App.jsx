@@ -949,20 +949,22 @@ function postflopStreetIndex(street){
 function postflopFamilyMatchesNode(node, family){
   if(!node || !family || node.street === 'preflop') return false;
   const streetIndex = postflopStreetIndex(node.street);
+  const playerCount = allSkillsEffectivePlayers(node);
   if(streetIndex < 1) return false;
   if(family.spotType && node.spotType !== family.spotType) return false;
   if(Array.isArray(family.streets) && family.streets.length > 0 && !family.streets.includes(streetIndex)) return false;
-  if(Array.isArray(family.players) && family.players.length > 0 && !family.players.includes(node.numPlayers)) return false;
+  if(Array.isArray(family.players) && family.players.length > 0 && !family.players.includes(playerCount)) return false;
   if(Array.isArray(family.handClasses) && family.handClasses.length > 0 && !family.handClasses.includes(node.handClass)) return false;
   return true;
 }
 
 function postflopFamilyMatchScore(node, family){
   const streetIndex = postflopStreetIndex(node?.street ?? '');
+  const playerCount = allSkillsEffectivePlayers(node);
   let score = family.priority ?? 0;
   if(family.spotType === node?.spotType) score += 12;
   if(Array.isArray(family.streets) && family.streets.includes(streetIndex)) score += 9;
-  if(Array.isArray(family.players) && family.players.includes(node?.numPlayers)) score += 7;
+  if(Array.isArray(family.players) && family.players.includes(playerCount)) score += 7;
   if(Array.isArray(family.handClasses) && family.handClasses.includes(node?.handClass)) score += 5;
   return score;
 }
@@ -1581,6 +1583,8 @@ const AS_TEXTURES = ['dry', 'semi-wet', 'wet', 'paired', 'monotone'];
 const AS_START_STREET_WEIGHTS = [[0, 0.55], [1, 0.3], [2, 0.15]];
 const AS_HEADS_UP_ONLY = true;
 const AS_MULTIWAY_DISTRIBUTION = AS_HEADS_UP_ONLY ? [2] : [2, 2, 2, 2, 2, 2, 3, 4];
+const AS_GHOST_DISTRIBUTION = [0, 0, 0, 0, 0, 0, 1, 2];
+const AS_MAX_GHOST_COUNT = 3;
 const AS_FADE_DELAY_MS = 130;
 const AS_MIN_SAMPLES_FOR_FOCUS_PICK = 3;
 const AS_MIN_SAMPLES_FOR_FOCUS_CUE = 4;
@@ -1633,6 +1637,27 @@ const AS_ACTION_LABELS = {
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const asRound = (n, p = 1) => Math.round(n * p) / p;
+
+function allSkillsNormalizeGhostCount(value){
+  if(!Number.isFinite(value)) return 0;
+  return clamp(Math.round(value), 0, AS_MAX_GHOST_COUNT);
+}
+
+function allSkillsGhostCount(source){
+  return allSkillsNormalizeGhostCount(source?.activeGhostCount);
+}
+
+function allSkillsEffectivePlayers(source){
+  const physicalPlayers = Math.max(Number.isFinite(source?.numPlayers) ? Math.round(source.numPlayers) : 2, 2);
+  return Math.max(physicalPlayers, 2 + allSkillsGhostCount(source));
+}
+
+function allSkillsGhostContextLine(source){
+  const ghostCount = allSkillsGhostCount(source);
+  if(ghostCount <= 0) return '';
+  const effectivePlayers = allSkillsEffectivePlayers(source);
+  return ` Ghost pressure: +${ghostCount} virtual player${ghostCount === 1 ? '' : 's'} (${effectivePlayers}-way dynamics).`;
+}
 
 function allSkillsActionLabel(action){ return AS_ACTION_LABELS[action] ?? action; }
 function allSkillsStreetTitle(street){ return street === 'preflop' ? 'Preflop' : street[0].toUpperCase() + street.slice(1); }
@@ -1730,19 +1755,25 @@ function createAllSkillsHandMeta(weakness = {}){
   const boardCards = deck.splice(0, 5);
   const villainType = allSkillsPickVillainType();
   const numPlayers = AS_HEADS_UP_ONLY ? 2 : randItem(AS_MULTIWAY_DISTRIBUTION);
+  const activeGhostCount = AS_HEADS_UP_ONLY
+    ? allSkillsNormalizeGhostCount(randItem(AS_GHOST_DISTRIBUTION))
+    : Math.max(numPlayers - 2, 0);
+  const effectivePlayers = Math.max(numPlayers, 2 + activeGhostCount);
   const heroPos = Math.random() > AS_IP_BIAS_THRESHOLD ? 'ip' : 'oop';
   const heroSeat = allSkillsResolvePosition(heroPos);
   const villainSeat = allSkillsResolveVillainSeat(heroSeat, heroPos);
   const stackBb = randItem(AS_STACKS);
   const startPotBb = asRound(AS_MIN_START_POT_BB + Math.random() * AS_START_POT_RANGE_BB, 10);
   const stageMult = startStreetIndex === 0 ? 1 : startStreetIndex === 1 ? (1.8 + Math.random() * 0.4) : (2.5 + Math.random() * 0.6);
-  const currentPotBb = asRound(startPotBb * stageMult * (1 + Math.max(numPlayers - 2, 0) * 0.12), 10);
+  const currentPotBb = asRound(startPotBb * stageMult * (1 + Math.max(effectivePlayers - 2, 0) * 0.12), 10);
   const stackLeftBb = asRound(Math.max(stackBb - currentPotBb * 0.28, 12), 10);
   return {
     id: allSkillsNextHandId(),
     villainType,
-    villainModel: allSkillsCreateVillainModel(villainType, numPlayers),
+    villainModel: allSkillsCreateVillainModel(villainType, effectivePlayers),
     numPlayers,
+    activeGhostCount,
+    effectivePlayers,
     heroPos,
     heroSeat,
     villainSeat,
@@ -2084,7 +2115,7 @@ function allSkillsPickPreflopClass(meta){
   if(fromCards) return fromCards;
 
   const inLate = meta.heroPos === 'ip';
-  const extra = Math.max(meta.numPlayers - 2, 0);
+  const extra = Math.max((meta.numPlayers ?? 2) - 2, 0);
   return weightedPickFromEntries([
     ['premium', 0.6 + extra * 0.3],
     ['strong', 1.2 + extra * 0.4],
@@ -2137,6 +2168,22 @@ function allSkillsEstimateEquity(node){
   return {equity, effectiveEquity, potOdds};
 }
 
+function allSkillsApplyGhostEquityPressure(math, node){
+  const ghostCount = allSkillsGhostCount(node);
+  if(ghostCount <= 0) return {...math, ghostEquityPenalty: 0};
+
+  const mult = node.handClass === 'draw'
+    ? 0.14
+    : node.handClass === 'marginal'
+      ? 0.11
+      : node.handClass === 'air'
+        ? 0.09
+        : 0.05;
+  const penalty = Math.round((math.effectiveEquity ?? math.equity ?? 0) * ghostCount * mult);
+  const effectiveEquity = Math.max(1, (math.effectiveEquity ?? math.equity ?? 0) - penalty);
+  return {...math, effectiveEquity, ghostEquityPenalty: penalty};
+}
+
 function allSkillsSizingStrength(handClass){
   if(handClass === 'monster') return 'monster';
   if(handClass === 'strong') return 'strong';
@@ -2181,6 +2228,8 @@ function allSkillsBuildNode(meta){
     activeOpponents = 1;
     numPlayers = 2;
   }
+  const activeGhostCount = allSkillsGhostCount(meta);
+  const effectivePlayers = Math.max(numPlayers, 2 + activeGhostCount);
   const boardCount = street === 'preflop' ? 0 : street === 'flop' ? 3 : street === 'turn' ? 4 : 5;
   const boardNow = meta.boardCards.slice(0, boardCount);
   const boardTexture = street === 'preflop' ? 'n/a' : allSkillsBoardTexture(boardNow);
@@ -2201,19 +2250,19 @@ function allSkillsBuildNode(meta){
   if(street === 'preflop'){
     handClass = allSkillsPickPreflopClass(meta);
     preflopPos = meta.heroSeat;
-    const facingOpenChance = clamp(meta.villainModel.looseness * 0.62 + meta.villainModel.aggression * 0.24 + (meta.heroPos === 'oop' ? 0.1 : 0) + Math.max(numPlayers - 2, 0) * 0.06, 0.15, 0.9);
+    const facingOpenChance = clamp(meta.villainModel.looseness * 0.62 + meta.villainModel.aggression * 0.24 + (meta.heroPos === 'oop' ? 0.1 : 0) + Math.max(effectivePlayers - 2, 0) * 0.06, 0.15, 0.9);
     spotType = (focusMatch && meta.focus.spotType?.startsWith('preflop')) ? meta.focus.spotType : (Math.random() < facingOpenChance ? 'preflop_facing_open' : 'preflop_open');
     if(spotType === 'preflop_facing_open' && allSkillsSeatsBefore(meta.heroSeat).length === 0) spotType = 'preflop_open';
     if(spotType === 'preflop_open' && allSkillsSeatsAfter(meta.heroSeat).length === 0) spotType = 'preflop_facing_open';
     preflopVillainSeat = allSkillsResolvePreflopVillainSeat(meta.heroSeat, spotType) ?? meta.villainSeat;
     if(spotType === 'preflop_open'){
       preflopSituation = 'unopened';
-      raiseOpenBb = asRound(2.3 + Math.max(numPlayers - 2, 0) * 0.25, 10);
+      raiseOpenBb = asRound(2.3 + Math.max(effectivePlayers - 2, 0) * 0.25, 10);
       potBb = 1.5;
       options = ['fold', 'limp', 'raise-small', 'raise-medium'];
     } else {
       sizeBucket = allSkillsPickSizing(meta.villainModel);
-      raiseOpenBb = asRound(2.4 + (sizeBucket === 'small' ? 0.2 : sizeBucket === 'medium' ? 0.9 : 1.6) + Math.max(numPlayers - 2, 0) * 0.35, 10);
+      raiseOpenBb = asRound(2.4 + (sizeBucket === 'small' ? 0.2 : sizeBucket === 'medium' ? 0.9 : 1.6) + Math.max(effectivePlayers - 2, 0) * 0.35, 10);
       betBb = raiseOpenBb;
       const callerPossible = allSkillsCanHaveCallerBeforeHero(meta.heroSeat, preflopVillainSeat);
       const withCaller = !AS_HEADS_UP_ONLY && numPlayers > 2 && callerPossible;
@@ -2222,8 +2271,8 @@ function allSkillsBuildNode(meta){
       options = ['fold', 'call', 'raise-large'];
     }
   } else {
-    handClass = postflopEval?.handClass ?? allSkillsPickPostflopClass(street, meta.focus, numPlayers);
-    const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(numPlayers - 2, 0) * 0.04, 0.18, 0.9);
+    handClass = postflopEval?.handClass ?? allSkillsPickPostflopClass(street, meta.focus, effectivePlayers);
+    const betFreq = clamp(meta.villainModel.aggression * 0.63 + (meta.heroPos === 'oop' ? 0.09 : 0) + Math.max(effectivePlayers - 2, 0) * 0.04, 0.18, 0.9);
     spotType = (focusMatch && meta.focus.spotType && !meta.focus.spotType.startsWith('preflop'))
       ? meta.focus.spotType
       : (Math.random() < betFreq ? 'facing_bet' : 'checked_to_hero');
@@ -2235,7 +2284,7 @@ function allSkillsBuildNode(meta){
     } else {
       sizeBucket = allSkillsPickSizing(meta.villainModel);
       const pct = sizeBucket === 'small' ? 0.33 : sizeBucket === 'medium' ? 0.58 : 0.86;
-      const pressure = 1 + Math.max(numPlayers - 2, 0) * 0.06;
+      const pressure = 1 + Math.max(effectivePlayers - 2, 0) * 0.06;
       betBb = asRound(potBb * pct * pressure, 10);
       options = ['fold', 'call', 'raise-small', 'raise-large'];
     }
@@ -2262,21 +2311,37 @@ function allSkillsBuildNode(meta){
     villainModel: meta.villainModel,
     numPlayers,
     activeOpponents,
+    activeGhostCount,
+    effectivePlayers,
     postflopEval,
   };
 
   if(spotType === 'facing_bet'){
-    const math = allSkillsEstimateEquity(node);
-    node = {...node, ...math};
+    const headsUpMath = allSkillsEstimateEquity(node);
+    const ghostMath = allSkillsApplyGhostEquityPressure(headsUpMath, node);
+    node = {...node, ...ghostMath, headsUpEffectiveEquity: headsUpMath.effectiveEquity};
   }
 
-  const baseline = allSkillsBaselineDecision(node);
-  const exploit = allSkillsExploitDecision(node, baseline);
+  const headsUpBaselineNode = allSkillsGhostCount(node) > 0
+    ? {
+      ...node,
+      activeGhostCount: 0,
+      effectivePlayers: node.numPlayers,
+      effectiveEquity: node.headsUpEffectiveEquity ?? node.effectiveEquity,
+    }
+    : node;
+  const baseline = allSkillsBaselineDecision(headsUpBaselineNode);
+  const ghostAdjustedBaseline = allSkillsApplyGhostPressure(node, baseline);
+  const exploit = allSkillsExploitDecision(node, ghostAdjustedBaseline);
   const skillBucket = allSkillsSkillBucket(node);
   const familyClass = postflopFamilyFromNode(node, meta.familyId ?? meta.targetFamilyId ?? meta.focus?.key ?? null);
   return {
     ...node,
-    baseline,
+    baseline: ghostAdjustedBaseline,
+    baselineHeadsUp: baseline,
+    ghostAdjustedBaseline,
+    ghostApplied: !!ghostAdjustedBaseline.ghostApplied,
+    ghostReason: ghostAdjustedBaseline.ghostReason ?? '',
     exploit,
     skillBucket,
     postflopFamilyId: familyClass.familyId,
@@ -2477,30 +2542,32 @@ function allSkillsContextCue(node){
 
   const texture = node.street === 'preflop' ? 'preflop dynamics' : `${node.boardTexture} board`;
   const textureClause = node.street === 'preflop' ? `in ${texture}` : `on a ${texture}`;
+  const effectivePlayers = allSkillsEffectivePlayers(node);
   const players = node.street === 'preflop' && node.spotType === 'preflop_open'
-    ? `${Math.max(node.numPlayers, 2)}-max table with ${Math.max((node.numPlayers ?? 2) - 1, 1)} behind`
-    : (node.numPlayers > 2 ? `${node.numPlayers}-way pot` : 'heads-up pot');
+    ? `${Math.max(effectivePlayers, 2)}-max dynamics with ${Math.max(effectivePlayers - 1, 1)} behind`
+    : (effectivePlayers > 2 ? `${effectivePlayers}-way dynamics` : 'heads-up pot');
   return `${spot} with ${handLabel[handTier] ?? handTier} ${textureClause} in a ${players}.`;
 }
 
 function allSkillsBuildSituationText(node, meta, heroSeat, villainSeat, villainName){
   const heroSeatInfo = POS_INFO[heroSeat];
   const villainSeatInfo = POS_INFO[villainSeat];
+  const ghostLine = allSkillsGhostContextLine(node);
 
   if(node.street === 'preflop'){
     if(node.spotType === 'preflop_open'){
-      return `You are first to act preflop in ${heroSeatInfo?.short ?? heroSeat.toUpperCase()}. ${villainName} is the likely defender from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}.`;
+      return `You are first to act preflop in ${heroSeatInfo?.short ?? heroSeat.toUpperCase()}. ${villainName} is the likely defender from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}.` + ghostLine;
     }
 
     const callerNote = node.preflopSituation === 'raise_caller' ? ' One player has already called the open.' : '';
-    return `${villainName} opens ${node.sizeBucket} to ${node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${meta.heroPos === 'ip' ? 'IP' : 'OOP'}).${callerNote}`;
+    return `${villainName} opens ${node.sizeBucket} to ${node.betBb}bb from ${villainSeatInfo?.short ?? villainSeat.toUpperCase()}. You act from ${heroSeatInfo?.short ?? heroSeat.toUpperCase()} (${meta.heroPos === 'ip' ? 'IP' : 'OOP'}).${callerNote}` + ghostLine;
   }
 
   if(node.spotType === 'checked_to_hero'){
-    return `${villainName} checks on a ${node.boardTexture} board. Pick your continuation action.`;
+    return `${villainName} checks on a ${node.boardTexture} board. Pick your continuation action.` + ghostLine;
   }
 
-  return `${villainName} bets ${node.sizeBucket} (${node.betBb}bb) into ${node.potBb}bb on a ${node.boardTexture} board.`;
+  return `${villainName} bets ${node.sizeBucket} (${node.betBb}bb) into ${node.potBb}bb on a ${node.boardTexture} board.` + ghostLine;
 }
 
 function allSkillsFallbackExploitReason(node){
@@ -2558,8 +2625,65 @@ function allSkillsSkillTagFocus(skillTag){
   return `${streetLabel}: ${bucketLabel}. Primary focus: ${spotLabel}.`;
 }
 
+function allSkillsApplyGhostPressure(node, baseline){
+  const ghostCount = allSkillsGhostCount(node);
+  if(ghostCount <= 0) return {...baseline, ghostApplied: false, ghostReason: ''};
+
+  const effectivePlayers = allSkillsEffectivePlayers(node);
+  let action = baseline.action;
+  let ghostReason = '';
+
+  if(node.street === 'preflop'){
+    if(node.spotType === 'preflop_open'){
+      if((node.handClass === 'speculative' || node.handClass === 'weak') && action !== 'fold' && node.options.includes('fold')){
+        action = 'fold';
+        ghostReason = `extra field pressure trims speculative first-in opens`;
+      } else if(node.handClass === 'medium' && ghostCount >= 2 && action.startsWith('raise') && node.options.includes('fold')){
+        action = 'fold';
+        ghostReason = `medium first-in opens are over-defended less often in crowded dynamics`;
+      }
+    } else if(node.spotType === 'preflop_facing_open' && action === 'call' && node.options.includes('fold')){
+      const tightenSpeculative = node.handClass === 'speculative' && ghostCount >= 1;
+      const tightenMedium = node.handClass === 'medium' && (ghostCount >= 2 || node.sizeBucket === 'large');
+      if(tightenSpeculative || tightenMedium){
+        action = 'fold';
+        ghostReason = `defense frequencies tighten as extra players increase squeeze and domination risk`;
+      }
+    }
+  } else if(node.spotType === 'checked_to_hero'){
+    if(node.handClass === 'air' && allSkillsIsAggro(action)){
+      action = 'check';
+      ghostReason = `fold equity drops when more ranges can continue`;
+    } else if(node.handClass === 'draw' && allSkillsIsAggro(action) && ghostCount >= 2){
+      action = 'check';
+      ghostReason = `semi-bluffs lose too much realization in larger fields`;
+    }
+  } else if(node.spotType === 'facing_bet'){
+    if(action === 'call' && node.options.includes('fold')){
+      const foldDraw = node.handClass === 'draw' && node.sizeBucket !== 'small';
+      const foldMarginal = node.handClass === 'marginal' && (ghostCount >= 2 || node.sizeBucket === 'large');
+      if(foldDraw || foldMarginal){
+        action = 'fold';
+        ghostReason = `continuing ranges must be stronger against ghost multiway pressure`;
+      }
+    }
+    if(node.handClass === 'draw' && action.startsWith('raise') && node.options.includes('call')){
+      action = 'call';
+      ghostReason = `draw raises lose EV when additional ranges can continue`;
+    }
+  }
+
+  if(action === baseline.action) return {...baseline, ghostApplied: false, ghostReason: ''};
+  if(!node.options.includes(action)) return {...baseline, ghostApplied: false, ghostReason: ''};
+
+  const reason = `${baseline.reason} Ghost adjustment (${effectivePlayers}-way dynamics): ${ghostReason}.`;
+  return {action, reason, decisionTier: baseline.decisionTier, ghostApplied: true, ghostReason};
+}
+
 function allSkillsExploitDecision(node, baseline){
   const v = node.villainType;
+  const effectivePlayers = allSkillsEffectivePlayers(node);
+  const hasGhostPressure = allSkillsGhostCount(node) > 0;
   let action = baseline.action;
   let reason = baseline.reason;
 
@@ -2678,11 +2802,11 @@ function allSkillsExploitDecision(node, baseline){
     }
   }
 
-  if(node.numPlayers > 2){
+  if(effectivePlayers > 2){
     if(node.spotType === 'facing_bet' && (node.handClass === 'draw' || node.handClass === 'marginal') && action === 'call' && node.sizeBucket !== 'small'){
       action = 'fold';
       reason = randItem([
-        `${node.numPlayers}-way pressure tightens defense logic. Fold here.`,
+        `${effectivePlayers}-way pressure tightens defense logic. Fold here.`,
         `With multiple players, bluffs drop. Respect the bet and fold marginal hands.`,
         `Multiway pots demand stronger hands to continue. Let it go.`
       ]);
@@ -2690,7 +2814,7 @@ function allSkillsExploitDecision(node, baseline){
     if(node.handClass === 'air' && allSkillsIsAggro(action)){
       action = allSkillsStepAction(node, action, -1);
       reason = randItem([
-        `${node.numPlayers}-way pots reduce bluff success. Scale back aggression.`,
+        `${effectivePlayers}-way dynamics reduce bluff success. Scale back aggression.`,
         `Don't run big bluffs into crowded fields. Reduce your sizing.`,
         `Fewer bluffs work against multiple opponents. Tone it down.`
       ]);
@@ -2708,6 +2832,7 @@ function allSkillsExploitDecision(node, baseline){
   if(!node.options.includes(action)) return {action: baseline.action, reason: baseline.reason};
   const changed = action !== baseline.action || reason !== baseline.reason;
   if(!changed) return {action: baseline.action, reason: allSkillsFallbackExploitReason(node)};
+  if(hasGhostPressure) reason = `${reason} Ghost-aware baseline considered ${effectivePlayers}-way dynamics.`;
   return {action, reason};
 }
 
@@ -2748,9 +2873,10 @@ function allSkillsActionCommit(node, action){
   if(action === 'limp') return 1;
 
   if(node.street === 'preflop'){
+    const effectivePlayers = allSkillsEffectivePlayers(node);
     if(node.spotType === 'preflop_open'){
-      if(action === 'raise-small') return asRound(2.4 + Math.max(node.numPlayers - 2, 0) * 0.2, 10);
-      if(action === 'raise-medium') return asRound(3.1 + Math.max(node.numPlayers - 2, 0) * 0.3, 10);
+      if(action === 'raise-small') return asRound(2.4 + Math.max(effectivePlayers - 2, 0) * 0.2, 10);
+      if(action === 'raise-medium') return asRound(3.1 + Math.max(effectivePlayers - 2, 0) * 0.3, 10);
     }
     if(action === 'call') return asRound(node.betBb ?? 2.6, 10);
     if(action === 'raise-large') return asRound((node.betBb ?? 2.8) * 2.4, 10);
@@ -2808,12 +2934,16 @@ function allSkillsOpponentWord(count){
 
 function allSkillsResolve(meta, node, scored, fatalInfo){
   const startingOpponents = allSkillsActiveOpponents(meta);
+  const startingGhostCount = allSkillsGhostCount(meta);
+  const startingEffectivePlayers = Math.max(startingOpponents + 1, 2 + startingGhostCount);
   const entry = {
     street: node.street,
     spotType: node.spotType,
     skillBucket: node.skillBucket,
     numPlayers: node.numPlayers,
     activeOpponents: startingOpponents,
+    activeGhostCount: startingGhostCount,
+    effectivePlayers: startingEffectivePlayers,
     postflopFamilyId: node.postflopFamilyId ?? null,
     action: scored.action,
     isCorrect: scored.isCorrect,
@@ -2828,12 +2958,12 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
   let nextMeta = {...meta, history: [...meta.history, entry]};
 
   if(fatalInfo.isFatal){
-    nextMeta = {...nextMeta, ended: true};
+    nextMeta = {...nextMeta, ended: true, activeGhostCount: startingGhostCount, effectivePlayers: startingEffectivePlayers};
     return {meta: nextMeta, ended: true, fatal: true, text: 'Fatal error detected. Hand terminated and score capped.'};
   }
 
   if(scored.action === 'fold'){
-    nextMeta = {...nextMeta, ended: true};
+    nextMeta = {...nextMeta, ended: true, activeGhostCount: startingGhostCount, effectivePlayers: startingEffectivePlayers};
     return {meta: nextMeta, ended: true, fatal: false, text: 'You folded. Hand ends immediately.'};
   }
 
@@ -2848,18 +2978,18 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
     const size = allSkillsSizeBucket(scored.action);
     const sizeAdj = size === 'large' ? 0.14 : size === 'small' ? -0.06 : 0;
     let foldChance = clamp(meta.villainModel.foldToAggro + sizeAdj + (Math.random() - 0.5) * 0.08, 0.08, 0.85);
-    if(meta.numPlayers > 2) foldChance *= clamp(1 - (meta.numPlayers - 2) * 0.09, 0.65, 1);
+    if(startingEffectivePlayers > 2) foldChance *= clamp(1 - (startingEffectivePlayers - 2) * 0.09, 0.65, 1);
     if(meta.streetIndex <= meta.targetStreet) foldChance *= AS_DEEP_STREET_FOLD_MULT;
     if(Math.random() < foldChance){
       if(startingOpponents <= 1){
-        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1};
+        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1, activeGhostCount: startingGhostCount, effectivePlayers: Math.max(1, 2 + startingGhostCount)};
         return {meta: nextMeta, ended: true, fatal: false, text: 'Villain folds to pressure. Hand ends.'};
       }
 
       const crowdFoldChance = size === 'large' ? 0.56 : size === 'small' ? 0.36 : 0.47;
       nextActiveOpponents = allSkillsApplyOpponentAttrition(startingOpponents, crowdFoldChance, 0);
       if(nextActiveOpponents <= 0){
-        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1};
+        nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: 0, numPlayers: 1, activeGhostCount: startingGhostCount, effectivePlayers: Math.max(1, 2 + startingGhostCount)};
         return {meta: nextMeta, ended: true, fatal: false, text: 'Your pressure folds out the whole field. Hand ends.'};
       }
 
@@ -2881,14 +3011,15 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
   }
 
   const nextNumPlayers = Math.max(nextActiveOpponents + 1, 2);
+  const nextEffectivePlayers = Math.max(nextNumPlayers, 2 + startingGhostCount);
 
   if(nextStack <= 0){
-    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers};
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers, activeGhostCount: startingGhostCount, effectivePlayers: nextEffectivePlayers};
     return {meta: nextMeta, ended: true, fatal: false, text: 'Stacks are in. Hand goes to showdown.'};
   }
 
   if(meta.streetIndex >= 3){
-    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers};
+    nextMeta = {...nextMeta, ended: true, currentPotBb: nextPot, stackLeftBb: nextStack, activeOpponents: nextActiveOpponents, numPlayers: nextNumPlayers, activeGhostCount: startingGhostCount, effectivePlayers: nextEffectivePlayers};
     return {meta: nextMeta, ended: true, fatal: false, text: 'River complete. Hand goes to showdown.'};
   }
 
@@ -2899,8 +3030,10 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
     stackLeftBb: nextStack,
     activeOpponents: nextActiveOpponents,
     numPlayers: nextNumPlayers,
+    activeGhostCount: startingGhostCount,
+    effectivePlayers: nextEffectivePlayers,
   };
-  const fieldNote = nextNumPlayers !== node.numPlayers ? `Field now ${nextNumPlayers}-way.` : '';
+  const fieldNote = nextEffectivePlayers !== allSkillsEffectivePlayers(node) ? `Field now ${nextEffectivePlayers}-way dynamics.` : '';
   const travelText = `Proceed to ${allSkillsStreetTitle(AS_STREETS[nextMeta.streetIndex])}.`;
   const text = [transitionNote, fieldNote, travelText].filter(Boolean).join(' ');
   return {meta: nextMeta, ended: false, fatal: false, text};
@@ -3149,6 +3282,8 @@ function AllSkillsTab(){
   const villainSeat = state.node.villainSeat ?? state.meta.villainSeat ?? (state.meta.heroPos === 'ip' ? 'bb' : 'btn');
   const heroSeatInfo = POS_INFO[heroSeat];
   const villainSeatInfo = POS_INFO[villainSeat];
+  const activeGhostCount = allSkillsGhostCount(state.node);
+  const effectivePlayers = allSkillsEffectivePlayers(state.node);
   const isPreflopOpen = state.node.street === 'preflop' && state.node.spotType === 'preflop_open';
   const heroPosLabel = isPreflopOpen ? 'First In' : (state.meta.heroPos === 'ip' ? 'IP' : 'OOP');
   const villainRoleLabel = isPreflopOpen ? 'Defender' : 'Villain';
@@ -3167,8 +3302,10 @@ function AllSkillsTab(){
     ? Math.round((postflopFamilyWeakness[weakPostflopFamilyId]?.correct ?? 0) / Math.max(postflopFamilyWeakness[weakPostflopFamilyId]?.total ?? 1, 1) * 100)
     : null;
   const playerText = isPreflopOpen
-    ? 'Unopened pot (blinds only). Players behind can still act.'
-    : (state.meta.numPlayers === 2 ? 'Heads-up pot' : `${state.meta.numPlayers}-way pot — tighten up here`);
+    ? (activeGhostCount > 0
+      ? `Unopened pot baseline is heads-up. Ghost pressure models ${effectivePlayers}-way dynamics (+${activeGhostCount}).`
+      : 'Unopened pot (blinds only). Players behind can still act.')
+    : (effectivePlayers === 2 ? 'Heads-up pot' : `${effectivePlayers}-way dynamics — tighten up here`);
   const openPositionMap = (e) => {
     if(e){
       e.preventDefault();
@@ -3236,7 +3373,7 @@ function AllSkillsTab(){
             <span style={{background:'rgba(100,100,150,0.15)',border:'1px solid rgba(100,100,180,0.3)',color:'#9090c0',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Pot {state.node.potBb}bb</span>
             <span style={{background:'rgba(70,120,120,0.15)',border:'1px solid rgba(70,120,120,0.32)',color:'#78a8a8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{state.meta.stackLeftBb}bb stack</span>
             <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{villainBadgeLabel}: {state.meta.villainModel.name}</span>
-            {state.meta.numPlayers > 2 && <span style={{background:'rgba(100,100,150,0.18)',border:'1px solid rgba(120,120,190,0.34)',color:'#aab0dd',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>👥 {state.meta.numPlayers}-way</span>}
+            {effectivePlayers > 2 && <span style={{background:'rgba(100,100,150,0.18)',border:'1px solid rgba(120,120,190,0.34)',color:'#aab0dd',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>👥 {effectivePlayers}-way{activeGhostCount > 0 ? ` (+${activeGhostCount} ghost)` : ''}</span>}
             {postflopFamily && state.node.street !== 'preflop' && <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>{postflopFamily.label}</span>}
             {state.node.street !== 'preflop' && state.node.postflopFamilyMatched === false && <span style={{background:'rgba(140,110,50,0.15)',border:'1px solid rgba(180,140,70,0.3)',color:'#c8a868',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase',fontFamily:'sans-serif'}}>Family fallback</span>}
             <div style={{width:'100%',fontSize:11,color:'#8fb486',fontFamily:'sans-serif',lineHeight:1.45}}>Profile read: {villainHint}</div>
@@ -3249,7 +3386,7 @@ function AllSkillsTab(){
           <div style={{fontSize:11,color:'#7fa37a',marginTop:8,fontFamily:'sans-serif'}}>{playerText}</div>
           {showFacingBetMath && (
             <div style={{fontSize:11,color:'#86a882',marginTop:6,fontFamily:'sans-serif'}}>
-              Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}%
+              Pot odds: {state.node.potOdds}% · Discounted equity: {state.node.effectiveEquity}% · Field: {effectivePlayers}-way
             </div>
           )}
           {showFacingBetMath && state.node.postflopEval?.drawOuts > 0 && (
@@ -3376,9 +3513,12 @@ export const __testables = {
   genPreflopScenario,
   createAllSkillsHandMeta,
   allSkillsBuildNode,
+  allSkillsGhostCount,
+  allSkillsEffectivePlayers,
   allSkillsMatchTierFromCards,
   allSkillsPreflopDecisionTier,
   allSkillsBaselineDecision,
+  allSkillsApplyGhostPressure,
   allSkillsExploitDecision,
   allSkillsContextCue,
   allSkillsBuildSituationText,

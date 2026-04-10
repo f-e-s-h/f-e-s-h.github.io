@@ -20,6 +20,8 @@ function buildMeta(overrides = {}){
     history: [],
     activeOpponents: 2,
     numPlayers: 3,
+    activeGhostCount: 0,
+    effectivePlayers: 3,
     villainModel: {foldToAggro: 0.35},
     stackLeftBb: 80,
     currentPotBb: 12,
@@ -184,5 +186,20 @@ describe('engine resolver invariants', () => {
     expect(result.meta.activeOpponents).toBeLessThan(meta.activeOpponents);
     expect(result.meta.numPlayers).toBe(result.meta.activeOpponents + 1);
     expect(result.text).toMatch(/Field now 3-way/i);
+  });
+
+  it('keeps ghost metadata in history and next street meta', () => {
+    const meta = buildMeta({activeOpponents: 1, numPlayers: 2, activeGhostCount: 2, effectivePlayers: 4});
+    const node = buildNode({numPlayers: 2, activeGhostCount: 2, effectivePlayers: 4});
+    const scored = buildScored('check');
+    const fatalInfo = {isFatal: false, code: null, message: ''};
+
+    const result = allSkillsResolve(meta, node, scored, fatalInfo);
+
+    expect(result.ended).toBe(false);
+    expect(result.meta.activeGhostCount).toBe(2);
+    expect(result.meta.effectivePlayers).toBe(4);
+    expect(result.meta.history[0].activeGhostCount).toBe(2);
+    expect(result.meta.history[0].effectivePlayers).toBe(4);
   });
 });
