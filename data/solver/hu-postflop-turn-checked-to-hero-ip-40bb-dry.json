@@ -1,0 +1,1 @@
+{"spot_id":"hu-postflop-turn-checked-to-hero-ip-40bb-dry","street":"turn","scenario":"checked-to-hero","position":"ip","stack_bb":40,"texture":"dry","board":"Ah7d2sQc","hero_player":1,"history_actions":["Check"],"actions":["Check","Bet(99)"],"strategy":[0.0,0.018631266,0.00006103609,1.0,0.9813687,0.99993896],"hero_private_hands":["8h7h","QsQh","AdKc"],"iterations":50}

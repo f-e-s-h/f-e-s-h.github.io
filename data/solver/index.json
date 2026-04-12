@@ -1,0 +1,1005 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": {
+    "pos_ip__stack_100bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_100bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_100bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_120bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_120bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_40bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_40bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_60bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_60bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_ip__stack_80bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_ip__stack_80bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_100bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_100bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_120bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_120bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_40bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_40bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_60bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_60bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_dry__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_paired__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "file": "heads-up-flop-checked.json",
+      "street": "flop",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "file": "heads-up-flop-facing.json",
+      "street": "flop",
+      "spotType": "facing_bet"
+    },
+    "pos_oop__stack_80bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "file": "heads-up-turn-checked.json",
+      "street": "turn",
+      "spotType": "checked_to_hero"
+    },
+    "pos_oop__stack_80bb__texture_wet__node_turn_facing_bet__hist_flop_bet_small__flop_call": {
+      "file": "heads-up-turn-facing.json",
+      "street": "turn",
+      "spotType": "facing_bet"
+    }
+  }
+}
