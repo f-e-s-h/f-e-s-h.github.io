@@ -1,0 +1,1 @@
+{"spot_id":"hu-postflop-flop-checked-to-hero-ip-120bb-wet","street":"flop","scenario":"checked-to-hero","position":"ip","stack_bb":120,"texture":"wet","board":"JhTc9d","hero_player":1,"history_actions":["Check"],"actions":["Check","Bet(75)"],"strategy":[0.52139413,0.77382135,0.9154979,0.47860587,0.22617868,0.08450212],"hero_private_hands":["8h7h","QsQh","AdKc"],"iterations":50}

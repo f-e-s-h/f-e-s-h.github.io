@@ -8,6 +8,13 @@
     "test:watch": "vitest",
     "dev": "vite",
     "build": "vite build",
+    "solver:generate": "node scripts/generate-prototype-solver-data.mjs",
+    "solver:import": "node scripts/import-solver-artifacts.mjs",
+    "solver:import:dry": "node scripts/import-solver-artifacts.mjs --dry-run",
+    "solver:adapt": "node scripts/adapt-raw-solver-data.mjs",
+    "solver:validate": "node scripts/validate-solver-data.mjs",
+    "solver:sync": "npm run solver:import && npm run solver:adapt && npm run solver:validate",
+    "solver:refresh": "npm run solver:generate && npm run solver:validate",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"

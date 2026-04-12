@@ -7,6 +7,7 @@ const {
   allSkillsEstimateEquity,
   allSkillsBaselineDecision,
   allSkillsApplyGhostPressure,
+  allSkillsExploitDecision,
   allSkillsScoreAction,
 } = __testables;
 
@@ -317,5 +318,162 @@ describe('hand evaluation and equity', () => {
     expect(scored.isCorrect).toBe(false);
     expect(scored.score).toBe(0);
     expect(scored.acceptableActions).toEqual([]);
+  });
+
+  it('keeps turn_pressure value sizing centered at medium on non-wet turns', () => {
+    const node = {
+      street: 'turn',
+      spotType: 'checked_to_hero',
+      handClass: 'strong',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      numPlayers: 2,
+      heroPos: 'ip',
+      villainType: 'lp',
+      villainLabel: 'LP',
+      postflopFamilyId: 'turn_pressure',
+      postflopEval: {madeHand: 'top-pair', heroCardsUsed: 2},
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('bet-medium');
+    expect(exploit.action).toBe('bet-medium');
+    expect(exploit.reason).toMatch(/Turn-pressure calibration/i);
+  });
+
+  it('prefers near-price draw calls in flop_cbet_bluff facing-bet branches', () => {
+    const node = {
+      street: 'turn',
+      spotType: 'facing_bet',
+      handClass: 'draw',
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+      villainType: 'tag',
+      villainLabel: 'TAG',
+      numPlayers: 2,
+      potBb: 18,
+      betBb: 8,
+      effectiveEquity: 33,
+      potOdds: 37,
+      postflopFamilyId: 'flop_cbet_bluff',
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('fold');
+    expect(exploit.action).toBe('call');
+    expect(exploit.reason).toMatch(/Flop c-bet bluff calibration/i);
+  });
+
+  it('keeps far-from-price draw folds in flop_cbet_bluff facing-bet branches', () => {
+    const node = {
+      street: 'turn',
+      spotType: 'facing_bet',
+      handClass: 'draw',
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'ip',
+      villainType: 'tag',
+      villainLabel: 'TAG',
+      numPlayers: 2,
+      potBb: 18,
+      betBb: 10,
+      effectiveEquity: 19,
+      potOdds: 40,
+      postflopFamilyId: 'flop_cbet_bluff',
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('fold');
+    expect(exploit.action).toBe('fold');
+  });
+
+  it('adds medium marginal pressure on OOP turn_pressure textures instead of pure checks', () => {
+    const node = {
+      street: 'turn',
+      spotType: 'checked_to_hero',
+      handClass: 'marginal',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium', 'bet-large'],
+      heroPos: 'oop',
+      villainType: 'tag',
+      villainLabel: 'TAG',
+      numPlayers: 2,
+      postflopFamilyId: 'turn_pressure',
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('check');
+    expect(exploit.action).toBe('bet-medium');
+    expect(exploit.reason).toMatch(/Turn-pressure calibration/i);
+  });
+
+  it('adds OOP medium air probes in flop_cbet_bluff checked-to-hero pressure textures', () => {
+    const node = {
+      street: 'flop',
+      spotType: 'checked_to_hero',
+      handClass: 'air',
+      boardTexture: 'semi-wet',
+      options: ['check', 'bet-small', 'bet-medium'],
+      heroPos: 'oop',
+      villainType: 'tag',
+      villainLabel: 'TAG',
+      numPlayers: 2,
+      postflopFamilyId: 'flop_cbet_bluff',
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('check');
+    expect(exploit.action).toBe('bet-medium');
+    expect(exploit.reason).toMatch(/Flop c-bet bluff calibration/i);
+  });
+
+  it('uses OOP raise-large semibluff for near-price draws in flop_cbet_bluff facing-bet pressure spots', () => {
+    const node = {
+      street: 'turn',
+      spotType: 'facing_bet',
+      handClass: 'draw',
+      boardTexture: 'semi-wet',
+      sizeBucket: 'medium',
+      options: ['fold', 'call', 'raise-small', 'raise-large'],
+      heroPos: 'oop',
+      villainType: 'tag',
+      villainLabel: 'TAG',
+      numPlayers: 2,
+      potBb: 18,
+      betBb: 8,
+      effectiveEquity: 28,
+      potOdds: 37,
+      postflopFamilyId: 'flop_cbet_bluff',
+      activeGhostCount: 0,
+      effectivePlayers: 2,
+    };
+
+    const baseline = allSkillsBaselineDecision(node);
+    const exploit = allSkillsExploitDecision(node, baseline);
+
+    expect(baseline.action).toBe('fold');
+    expect(exploit.action).toBe('raise-large');
+    expect(exploit.reason).toMatch(/Flop c-bet bluff calibration/i);
   });
 });

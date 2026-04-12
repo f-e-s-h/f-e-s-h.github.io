@@ -1,0 +1,1 @@
+{"spot_id":"hu-postflop-flop-facing-bet-oop-60bb-wet","street":"flop","scenario":"facing-bet","position":"oop","stack_bb":60,"texture":"wet","board":"JhTc9d","hero_player":0,"history_actions":["Check","Bet(75)"],"actions":["Fold","Call","Raise(188)"],"strategy":[0.0,0.46819636,0.5069896,0.3797249,0.49301037,0.15207872],"hero_private_hands":["8c7c","QdQc"],"iterations":50}

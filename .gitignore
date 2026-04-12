@@ -2,3 +2,9 @@
 dist/
 .env
 .DS_Store
+
+# Local solver source checkouts are intentionally external (../postflop-solver).
+# If temporarily nested here for local experiments, keep them out of app git history.
+postflop-solver/
+tools/postflop-solver/
+vendor/postflop-solver/

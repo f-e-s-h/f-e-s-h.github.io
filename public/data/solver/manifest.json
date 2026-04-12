@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "solverVersion": "prototype-2026-04-10-coverage100",
+  "generatedAt": "2026-04-10T21:47:25.901Z",
+  "coverage": "phase1-heads-up-postflop",
+  "thresholds": {
+    "bestMin": 0.5,
+    "acceptableMin": 0.15
+  },
+  "indexFile": "index.json",
+  "spotCount": 200
+}

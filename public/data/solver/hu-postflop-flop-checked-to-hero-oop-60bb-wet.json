@@ -1,0 +1,1 @@
+{"spot_id":"hu-postflop-flop-checked-to-hero-oop-60bb-wet","street":"flop","scenario":"checked-to-hero","position":"oop","stack_bb":60,"texture":"wet","board":"JhTc9d","hero_player":0,"history_actions":[],"actions":["Check","Bet(75)"],"strategy":[0.14948152,0.2556066,0.85051847,0.7443934],"hero_private_hands":["8c7c","QdQc"],"iterations":50}

@@ -1,0 +1,1 @@
+{"spot_id":"hu-postflop-turn-facing-bet-oop-80bb-wet","street":"turn","scenario":"facing-bet","position":"oop","stack_bb":80,"texture":"wet","board":"JhTc9d8c","hero_player":0,"history_actions":["Check","Bet(99)"],"actions":["Fold","Call","Raise(248)"],"strategy":[0.017702213,0.5879952,0.39430264],"hero_private_hands":["QdQc"],"iterations":50}

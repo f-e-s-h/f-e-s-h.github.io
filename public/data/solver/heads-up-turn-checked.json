@@ -1,0 +1,596 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": {
+    "pos_ip__stack_100bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.08679331338229554,
+        "bet-large": 0.9132066866177045
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-100bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.000010172681272148049,
+        "bet-large": 0.9999898273187279
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-100bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.00002543170337478701,
+        "bet-large": 0.9999745682966252
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-100bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.931071940828223,
+        "bet-large": 0.06892805917177701
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-100bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9319651071202326,
+        "bet-large": 0.06803489287976738
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-100bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "bet-large": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-120bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.02809105424044835,
+        "bet-large": 0.9719089457595516
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-120bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.1977043757593504,
+        "bet-large": 0.8022956242406495
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-120bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.8168161795795954,
+        "bet-large": 0.18318382042040446
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-120bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.6831057291080764,
+        "bet-large": 0.3168942708919236
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-120bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.006230767442069465,
+        "bet-large": 0.9937692325579306
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-40bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.023239490232394903,
+        "bet-large": 0.976760509767605
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-40bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.027228314066092718,
+        "bet-large": 0.9727716859339073
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-40bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.8444841483110317,
+        "bet-large": 0.1555158516889683
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-40bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.6785941341904157,
+        "bet-large": 0.32140586580958436
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-40bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.004816764712790248,
+        "bet-large": 0.9951832352872098
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-60bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "bet-large": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-60bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.033198457320918424,
+        "bet-large": 0.9668015426790816
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-60bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.8078473893883373,
+        "bet-large": 0.19215261061166267
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-60bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-60bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.2718792702917236,
+        "bet-large": 0.7281207297082763
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-80bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.006988632254422285,
+        "bet-large": 0.9930113677455776
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-80bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.11432390615154074,
+        "bet-large": 0.8856760938484592
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-80bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.7732785381457352,
+        "bet-large": 0.22672146185426487
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-80bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999745682966252,
+        "bet-large": 0.000025431703374787008
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-ip-80bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-ip-80bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999771115836925,
+        "bet-large": 0.00002288841630735964
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-100bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9944991224587435,
+        "bet-large": 0.0055008775412565825
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-100bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9983901731948486,
+        "bet-large": 0.001609826805151446
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-100bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.032522062893502714,
+        "bet-large": 0.9674779371064972
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-100bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.0016604716971771983,
+        "bet-large": 0.9983395283028229
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-100bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999923704889963,
+        "bet-large": 0.000007629511003730832
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-120bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9204013092040131,
+        "bet-large": 0.07959869079598691
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-120bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.88105592,
+        "bet-large": 0.11894408
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-120bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.044658070296966,
+        "bet-large": 0.955341929703034
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-120bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "bet-large": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-120bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-40bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-40bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-40bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.12835712552040487,
+        "bet-large": 0.8716428744795952
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-40bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "bet-large": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-40bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 1
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-60bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999771114667375,
+        "bet-large": 0.00002288853326246281
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-60bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999771114667375,
+        "bet-large": 0.00002288853326246281
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-60bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.062428810551872146,
+        "bet-large": 0.9375711894481279
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-60bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.0014322937090234505,
+        "bet-large": 0.9985677062909766
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-60bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_dry__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9945296409671778,
+        "bet-large": 0.005470359032822154
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-80bb-dry.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9999771114667375,
+        "bet-large": 0.00002288853326246281
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-80bb-monotone.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_paired__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.9904549235143177,
+        "bet-large": 0.009545076485682386
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-80bb-paired.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.059402729257411815,
+        "bet-large": 0.9405972707425881
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-80bb-semi_wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_wet__node_turn_checked_to_hero__hist_flop_check__flop_check": {
+      "frequencies": {
+        "check": 0.003178997408265393,
+        "bet-large": 0.9968210025917346
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-turn-checked-to-hero-oop-80bb-wet.json",
+        "spotId": "hu-postflop-turn-checked-to-hero-oop-80bb-wet",
+        "iterations": 50
+      }
+    }
+  }
+}

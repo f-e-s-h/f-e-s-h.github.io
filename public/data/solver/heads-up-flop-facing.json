@@ -1,0 +1,645 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": {
+    "pos_ip__stack_100bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.09268734912037825,
+        "call": 0.43326194867844625,
+        "raise-large": 0.47405070220117546
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-100bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.48915736666666665,
+        "raise-large": 0.5108426333333334
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-100bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.3881562,
+        "raise-large": 0.6118438
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-100bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.2288736058408461,
+        "call": 0.7636126021381152,
+        "raise-large": 0.007513792021038618
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-100bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.4202845457971545,
+        "call": 0.32048076679519233,
+        "raise-large": 0.2592346874076531
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-100bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.10258173794836525,
+        "call": 0.30407443725184463,
+        "raise-large": 0.5933438247997902
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-120bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.51515802161614,
+        "raise-large": 0.48484197838386006
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-120bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.5787771566666667,
+        "raise-large": 0.4212228433333333
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-120bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.2142012531318937,
+        "call": 0.7822356673075952,
+        "raise-large": 0.0035630795605110844
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-120bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.40851264683475397,
+        "call": 0.30463545829687255,
+        "raise-large": 0.2868518948683734
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-120bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.0009494680748320923,
+        "call": 0.3936692100522219,
+        "raise-large": 0.605381321872946
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-40bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.28790425978307455,
+        "raise-large": 0.7120957402169256
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-40bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.5489255375179077,
+        "raise-large": 0.4510744624820923
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-40bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.2573496988143595,
+        "call": 0.7391367801586542,
+        "raise-large": 0.0035135210269864377
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-40bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.3555235492587258,
+        "call": 0.37262544621042415,
+        "raise-large": 0.2718510045308501
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-40bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.03944101307039325,
+        "call": 0.4322491704516722,
+        "raise-large": 0.5283098164779345
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-60bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.5834638050026094,
+        "raise-large": 0.4165361949973906
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-60bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.24495410642079551,
+        "raise-large": 0.7550458935792045
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-60bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.23434673870357417,
+        "call": 0.7573903338993364,
+        "raise-large": 0.008262927397089398
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-60bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.43239707607184813,
+        "call": 0.24522531021976027,
+        "raise-large": 0.3223776137083915
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-60bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.0015078545698331612,
+        "call": 0.4684163643170076,
+        "raise-large": 0.5300757811131591
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-80bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.2275984078442105,
+        "raise-large": 0.7724015921557895
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-80bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "call": 0.17322348016696326,
+        "raise-large": 0.8267765198330368
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-80bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.225290970502397,
+        "call": 0.7713447814132468,
+        "raise-large": 0.0033642480843562466
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-80bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.3368999146042988,
+        "call": 0.4396046660079304,
+        "raise-large": 0.2234954193877707
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-ip-80bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-ip-80bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9983743585249237,
+        "call": 0.0004775354777723648,
+        "raise-large": 0.0011481059973038623
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-100bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9291019476598514,
+        "call": 0.07085740549662599,
+        "raise-large": 0.000040646843522612135
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-100bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.8673253382556362,
+        "call": 0.13264463126257792,
+        "raise-large": 0.00003003048178584514
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-100bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.09290566055889814,
+        "call": 0.35671866906857236,
+        "raise-large": 0.5503756703725295
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-100bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.2167265126028441,
+        "call": 0.37262286638313613,
+        "raise-large": 0.4106506210140197
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-100bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9994151006253007,
+        "call": 0.00047300407129594296,
+        "raise-large": 0.00011189530340334251
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-120bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9090859467865933,
+        "call": 0.09058399360718901,
+        "raise-large": 0.0003300596062177755
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-120bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.8058575285662085,
+        "call": 0.19410493276765947,
+        "raise-large": 0.000037538666131944674
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-120bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.005248753277568375,
+        "call": 0.3354079689717649,
+        "raise-large": 0.6593432777506667
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-120bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.22747961482902496,
+        "call": 0.3528431477943775,
+        "raise-large": 0.41967723737659757
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-120bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9995981841286868,
+        "call": 0.00036621156573685555,
+        "raise-large": 0.000035604305576267333
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-40bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9995524027234471,
+        "call": 0.0002543163326929272,
+        "raise-large": 0.00019328094385995948
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-40bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9871992309388239,
+        "call": 0.012755024799742477,
+        "raise-large": 0.00004574426143362515
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-40bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.18922192747704097,
+        "call": 0.2667817397762435,
+        "raise-large": 0.5439963327467155
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-40bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.17202240258033602,
+        "call": 0.5133949077009236,
+        "raise-large": 0.31458268971874037
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-40bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9994812165433973,
+        "call": 0.0001576683316472209,
+        "raise-large": 0.00036111512495546244
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-60bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9672980131088715,
+        "call": 0.03264625908409075,
+        "raise-large": 0.000055727807037813866
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-60bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9496269871601876,
+        "call": 0.04981488387560423,
+        "raise-large": 0.0005581289642082925
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-60bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.02651070038245558,
+        "call": 0.45718006567719516,
+        "raise-large": 0.5163092339403493
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-60bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.23409818585245465,
+        "call": 0.4433572610839316,
+        "raise-large": 0.3225445530636138
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-60bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_dry__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9983116113715053,
+        "call": 0.0014239409800959279,
+        "raise-large": 0.00026444764839874015
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-80bb-dry.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9063780611237704,
+        "call": 0.09358634698430406,
+        "raise-large": 0.00003559189192542993
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-80bb-monotone.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_paired__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.9844174290092444,
+        "call": 0.015544434841212854,
+        "raise-large": 0.00003813614954271555
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-80bb-paired.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.10899974633500466,
+        "call": 0.3749231464597423,
+        "raise-large": 0.516077107205253
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-80bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_wet__node_flop_facing_bet__hist_start": {
+      "frequencies": {
+        "fold": 0.22558506067256934,
+        "call": 0.360136362012442,
+        "raise-large": 0.4142785773149887
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-facing-bet-oop-80bb-wet.json",
+        "spotId": "hu-postflop-flop-facing-bet-oop-80bb-wet",
+        "iterations": 50
+      }
+    }
+  }
+}

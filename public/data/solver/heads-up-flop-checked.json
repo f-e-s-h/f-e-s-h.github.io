@@ -1,0 +1,605 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": {
+    "pos_ip__stack_100bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.013294570657803621,
+        "bet-large": 0.9867054293421964
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-100bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.33065397768846594,
+        "bet-large": 0.6693460223115342
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-100bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.2691163335882178,
+        "bet-large": 0.7308836664117823
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-100bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9482958791374906,
+        "bet-large": 0.051704120862509334
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-100bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_100bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.6405769609371798,
+        "bet-large": 0.35942303906282025
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-100bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.08104574953016822,
+        "bet-large": 0.9189542504698318
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-120bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.47846814928227166,
+        "bet-large": 0.5215318507177285
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-120bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.26815539642459474,
+        "bet-large": 0.7318446035754054
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-120bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9293355482333887,
+        "bet-large": 0.0706644517666113
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-120bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_120bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.7369044477182591,
+        "bet-large": 0.26309555228174075
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-120bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.03510644301615272,
+        "bet-large": 0.9648935569838474
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-40bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.13526780040561082,
+        "bet-large": 0.8647321995943892
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-40bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.1503530039650193,
+        "bet-large": 0.8496469960349806
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-40bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9807291990192708,
+        "bet-large": 0.019270800980729197
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-40bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_40bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.7367556491225188,
+        "bet-large": 0.26324435087748116
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-40bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.011677557157885318,
+        "bet-large": 0.9883224428421148
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-60bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.39264295856857273,
+        "bet-large": 0.6073570414314273
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-60bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.24683862977735654,
+        "bet-large": 0.7531613702226434
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-60bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9613146355686415,
+        "bet-large": 0.038685364431358484
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-60bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_60bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.5925917920987762,
+        "bet-large": 0.4074082079012239
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-60bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.1580825686902425,
+        "bet-large": 0.8419174313097576
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-80bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.26688253088960845,
+        "bet-large": 0.7331174691103916
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-80bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.2673997665811989,
+        "bet-large": 0.7326002334188011
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-80bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.963114090368859,
+        "bet-large": 0.03688590963114089
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-80bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_ip__stack_80bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.5740467552468225,
+        "bet-large": 0.4259532447531774
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-ip-80bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-ip-80bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9991762264923068,
+        "bet-large": 0.0008237735076932306
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-100bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-100bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9308273261039077,
+        "bet-large": 0.06917267389609223
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-100bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-100bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9447885523534184,
+        "bet-large": 0.0552114476465816
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-100bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-100bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.032074895377992615,
+        "bet-large": 0.9679251046220074
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-100bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-100bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_100bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.14188839570944198,
+        "bet-large": 0.858111604290558
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-100bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-100bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9913142527064446,
+        "bet-large": 0.008685747293555457
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-120bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-120bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.8192816171083811,
+        "bet-large": 0.18071838289161885
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-120bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-120bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9695615012993557,
+        "bet-large": 0.03043849870064428
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-120bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-120bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.09419619396130795,
+        "bet-large": 0.905803806038692
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-120bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-120bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_120bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.3490763980184721,
+        "bet-large": 0.650923601981528
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-120bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-120bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9999237048926441,
+        "bet-large": 0.00007629510735596758
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-40bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-40bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.99973555265734,
+        "bet-large": 0.0002644473426599249
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-40bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-40bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9998168917365133,
+        "bet-large": 0.00018310826348661018
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-40bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-40bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.004793131209005992,
+        "bet-large": 0.995206868790994
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-40bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-40bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_40bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.23755469618777347,
+        "bet-large": 0.7624453038122265
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-40bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-40bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9998881041562017,
+        "bet-large": 0.00011189584379844706
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-60bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-60bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.981189256056272,
+        "bet-large": 0.018810743943727986
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-60bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-60bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9744557981788093,
+        "bet-large": 0.025544201821190583
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-60bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-60bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.0675812293241877,
+        "bet-large": 0.9324187706758122
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-60bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-60bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_60bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.20254406101272032,
+        "bet-large": 0.7974559389872796
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-60bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-60bb-wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_dry__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9992727284122109,
+        "bet-large": 0.0007272715877890812
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-80bb-dry.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-80bb-dry",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_monotone__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9372100824054954,
+        "bet-large": 0.06278991759450464
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-80bb-monotone.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-80bb-monotone",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_paired__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.9946675405416803,
+        "bet-large": 0.0053324594583196785
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-80bb-paired.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-80bb-paired",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_semi_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.05815124746106461,
+        "bet-large": 0.9418487525389353
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-80bb-semi_wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-80bb-semi_wet",
+        "iterations": 50
+      }
+    },
+    "pos_oop__stack_80bb__texture_wet__node_flop_checked_to_hero__hist_start": {
+      "frequencies": {
+        "check": 0.08331192891617438,
+        "bet-large": 0.9166880710838257
+      },
+      "meta": {
+        "source": "engine-native-adapter",
+        "rawFile": "hu-postflop-flop-checked-to-hero-oop-80bb-wet.json",
+        "spotId": "hu-postflop-flop-checked-to-hero-oop-80bb-wet",
+        "iterations": 50
+      }
+    }
+  }
+}
