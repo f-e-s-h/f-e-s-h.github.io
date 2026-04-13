@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { buildCanonicalSpotKey, isSolverEligibleNode } from "./solvers/contract.js";
+import {
+  buildCanonicalSpotKey,
+  gradeActionByFrequency,
+  getSolverThresholdProfileKey,
+  getSolverThresholdsForProfile,
+  isSolverEligibleNode,
+  selectBestAction,
+} from "./solvers/contract.js";
 import { lookupSolverDecisionBySpotKey } from "./solvers/loader.js";
 import { buildShadowDiagnosticReport, createShadowComparison } from "./solvers/shadow.js";
 
@@ -1613,6 +1620,10 @@ const AS_POSTFLOP_FAMILY_WEAKNESS_KEY = `poker_allskills_${AS_STORAGE_VERSION}_p
 const AS_SOLVER_SHADOW_VERSION = 'v1';
 const AS_SOLVER_SHADOW_KEY = `poker_allskills_solver_shadow_${AS_SOLVER_SHADOW_VERSION}`;
 const AS_SOLVER_SHADOW_REPORT_KEY = `poker_allskills_solver_shadow_report_${AS_SOLVER_SHADOW_VERSION}`;
+const AS_SOLVER_SCORING_VERSION = 'v2';
+const AS_SOLVER_SCORING_KEY = `poker_allskills_solver_scoring_${AS_SOLVER_SCORING_VERSION}`;
+const AS_SOLVER_THRESHOLD_PROFILE_VERSION = 'v1';
+const AS_SOLVER_THRESHOLD_PROFILE_KEY = `poker_allskills_solver_threshold_profile_${AS_SOLVER_THRESHOLD_PROFILE_VERSION}`;
 const AS_SOLVER_SHADOW_MAX_RECORDS = 250;
 
 const AS_VILLAIN_PROFILES = {
@@ -1641,6 +1652,7 @@ const AS_ACTION_LABELS = {
   'raise-medium': 'Raise Medium',
   'raise-large': 'Raise Large',
 };
+const AS_MAX_SHORTCUT_ACTIONS = 9;
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const asRound = (n, p = 1) => Math.round(n * p) / p;
@@ -1670,6 +1682,26 @@ function allSkillsActionLabel(action){ return AS_ACTION_LABELS[action] ?? action
 function allSkillsStreetTitle(street){ return street === 'preflop' ? 'Preflop' : street[0].toUpperCase() + street.slice(1); }
 function allSkillsIsAggro(action){ return action.startsWith('bet') || action.startsWith('raise'); }
 function allSkillsVillainHint(villainType){ return AS_VILLAIN_HINTS[villainType] ?? 'Watch bet sizing and showdowns to profile this opponent.'; }
+function allSkillsShortcutActionFromKey(key, options){
+  if(!Array.isArray(options) || !/^[1-9]$/.test(key)) return null;
+  const index = Number(key) - 1;
+  if(index < 0 || index >= Math.min(options.length, AS_MAX_SHORTCUT_ACTIONS)) return null;
+  return options[index] ?? null;
+}
+
+function allSkillsIsEditableTarget(target){
+  if(!(target instanceof HTMLElement)) return false;
+  if(target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+function allSkillsIsNativeEnterTarget(target){
+  if(!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'BUTTON' || tag === 'A' || tag === 'SUMMARY';
+}
+
 function allSkillsSizeBucket(action){
   if(action.endsWith('small')) return 'small';
   if(action.endsWith('medium')) return 'medium';
@@ -1788,17 +1820,19 @@ function allSkillsAppendSolverShadowRecord(record){
   }
 }
 
-function allSkillsQueueSolverShadow(meta, node, scored){
+function allSkillsQueueSolverShadow(meta, node, scored, options = {}){
   if(!isSolverEligibleNode(node)) return;
 
   const spotKey = buildCanonicalSpotKey(node, meta);
+  const thresholds = options?.thresholds;
+  const thresholdProfile = getSolverThresholdProfileKey(options?.thresholdProfile);
   lookupSolverDecisionBySpotKey(spotKey)
     .then((solverDecision) => {
-      const comparison = createShadowComparison({spotKey, node, scored, solverDecision});
+      const comparison = createShadowComparison({spotKey, node, scored, solverDecision, thresholds, thresholdProfile});
       allSkillsAppendSolverShadowRecord(comparison);
     })
     .catch(() => {
-      const comparison = createShadowComparison({spotKey, node, scored, solverDecision: null});
+      const comparison = createShadowComparison({spotKey, node, scored, solverDecision: null, thresholds, thresholdProfile});
       allSkillsAppendSolverShadowRecord(comparison);
     });
 }
@@ -1806,6 +1840,89 @@ function allSkillsQueueSolverShadow(meta, node, scored){
 function allSkillsFormatPercent(value){
   if(!Number.isFinite(value)) return '0.0%';
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function allSkillsScoringSourceLabel(scoreSource){
+  if(scoreSource === 'solver_covered') return 'Solver covered spot';
+  if(scoreSource === 'heuristic_uncovered') return 'Heuristic fallback (uncovered)';
+  if(scoreSource === 'heuristic_error') return 'Heuristic fallback (solver lookup failed)';
+  return 'Heuristic';
+}
+
+function allSkillsBuildGtoFeedbackTrack(result, node, solverScoringEnabled){
+  if(!result || !node){
+    return {title: 'GTO Correctness', detail: 'No grading data available yet.'};
+  }
+
+  const chosenAction = allSkillsActionLabel(result.action ?? 'check');
+  const bestAction = allSkillsActionLabel(result.bestAction ?? node.baseline?.action ?? 'check');
+  const baselineAction = allSkillsActionLabel(result.baselineAction ?? node.baseline?.action ?? result.bestAction ?? 'check');
+
+  if(result.scoreSource === 'solver_covered'){
+    const category = result.solverCategory === 'best'
+      ? 'best-frequency action'
+      : result.solverCategory === 'acceptable'
+        ? 'solver-acceptable mixed action'
+        : 'below solver threshold';
+    const profileLabel = String(result.solverThresholdProfile ?? 'standard').toUpperCase();
+
+    return {
+      title: 'GTO Correctness (Solver)',
+      detail: `${chosenAction} was graded as ${category}. Solver best action: ${bestAction}. Baseline anchor: ${baselineAction}. Threshold profile: ${profileLabel}.`,
+    };
+  }
+
+  if(result.scoreSource === 'heuristic_uncovered'){
+    return {
+      title: 'GTO Correctness (Fallback)',
+      detail: `Solver scoring is enabled, but this exact spot is not covered by current artifacts. Heuristic grading used baseline anchor ${baselineAction}.`,
+    };
+  }
+
+  if(result.scoreSource === 'heuristic_error'){
+    return {
+      title: 'GTO Correctness (Fallback)',
+      detail: `Solver lookup failed for this decision, so heuristic grading used baseline anchor ${baselineAction}.`,
+    };
+  }
+
+  if(!solverScoringEnabled){
+    return {
+      title: 'GTO Correctness (Heuristic)',
+      detail: `Solver scoring is toggled off, so this decision used heuristic grading with baseline anchor ${baselineAction}.`,
+    };
+  }
+
+  return {
+    title: 'GTO Correctness (Heuristic)',
+    detail: `This node is outside current solver eligibility, so heuristic grading used baseline anchor ${baselineAction}. Solver best action (if covered) would be ${bestAction}.`,
+  };
+}
+
+function allSkillsBuildExploitFeedbackTrack(node){
+  if(!node){
+    return {title: 'Exploit Adjustment', detail: 'No exploit coaching data available yet.'};
+  }
+
+  const baselineAction = allSkillsActionLabel(node.baseline?.action ?? 'check');
+  const exploitAction = allSkillsActionLabel(node.exploit?.action ?? node.baseline?.action ?? 'check');
+  const exploitDiverges = Boolean(node.exploit?.action) && node.exploit.action !== node.baseline?.action;
+  const ghostAdjusted = Boolean(node.baselineHeadsUp?.action) && node.baselineHeadsUp.action !== node.baseline?.action;
+
+  let prefix = exploitDiverges
+    ? `Exploit layer shifts from baseline ${baselineAction} to ${exploitAction} for this villain/context model.`
+    : `Exploit layer stays aligned with baseline at ${baselineAction} for this villain/context model.`;
+
+  if(ghostAdjusted){
+    const headsUpAction = allSkillsActionLabel(node.baselineHeadsUp?.action ?? node.baseline?.action ?? 'check');
+    prefix = `${prefix} Ghost-pressure logic tightened baseline from ${headsUpAction} to ${baselineAction}.`;
+  }
+
+  const reason = node.exploit?.reason ?? node.baseline?.reason ?? 'No exploit note available.';
+  return {
+    title: 'Exploit Adjustment',
+    detail: `${prefix} ${reason}`,
+  };
 }
 
 function allSkillsNormalizeSizingModel(villain){
@@ -2443,8 +2560,8 @@ function allSkillsBuildNode(meta){
     if(spotType === 'checked_to_hero'){
       if(handClass === 'monster' || handClass === 'strong') options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
       else if(handClass === 'draw') options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
-      else if(handClass === 'marginal') options = ['check', 'bet-small', 'bet-medium'];
-      else options = ['check', 'bet-small', 'bet-medium'];
+      else if(handClass === 'marginal') options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
+      else options = ['check', 'bet-small', 'bet-medium', 'bet-large'];
     } else {
       sizeBucket = allSkillsPickSizing(meta.villainModel);
       const pct = sizeBucket === 'small' ? 0.33 : sizeBucket === 'medium' ? 0.58 : 0.86;
@@ -2486,21 +2603,28 @@ function allSkillsBuildNode(meta){
     node = {...node, ...ghostMath, headsUpEffectiveEquity: headsUpMath.effectiveEquity};
   }
 
-  const headsUpBaselineNode = allSkillsGhostCount(node) > 0
-    ? {
-      ...node,
-      activeGhostCount: 0,
-      effectivePlayers: node.numPlayers,
-      effectiveEquity: node.headsUpEffectiveEquity ?? node.effectiveEquity,
-    }
-    : node;
-  const baseline = allSkillsBaselineDecision(headsUpBaselineNode);
-  const ghostAdjustedBaseline = allSkillsApplyGhostPressure(node, baseline);
-  const exploit = allSkillsExploitDecision(node, ghostAdjustedBaseline);
-  const skillBucket = allSkillsSkillBucket(node);
   const familyClass = postflopFamilyFromNode(node, meta.familyId ?? meta.targetFamilyId ?? meta.focus?.key ?? null);
-  return {
+  const nodeWithFamily = {
     ...node,
+    postflopFamilyId: familyClass.familyId,
+    postflopFamilyMatched: familyClass.matched,
+    postflopFamilyMatchCount: familyClass.matchCount,
+  };
+
+  const headsUpBaselineNode = allSkillsGhostCount(nodeWithFamily) > 0
+    ? {
+      ...nodeWithFamily,
+      activeGhostCount: 0,
+      effectivePlayers: nodeWithFamily.numPlayers,
+      effectiveEquity: nodeWithFamily.headsUpEffectiveEquity ?? nodeWithFamily.effectiveEquity,
+    }
+    : nodeWithFamily;
+  const baseline = allSkillsBaselineDecision(headsUpBaselineNode);
+  const ghostAdjustedBaseline = allSkillsApplyGhostPressure(nodeWithFamily, baseline);
+  const exploit = allSkillsExploitDecision(nodeWithFamily, ghostAdjustedBaseline);
+  const skillBucket = allSkillsSkillBucket(nodeWithFamily);
+  return {
+    ...nodeWithFamily,
     baseline: ghostAdjustedBaseline,
     baselineHeadsUp: baseline,
     ghostAdjustedBaseline,
@@ -2508,9 +2632,6 @@ function allSkillsBuildNode(meta){
     ghostReason: ghostAdjustedBaseline.ghostReason ?? '',
     exploit,
     skillBucket,
-    postflopFamilyId: familyClass.familyId,
-    postflopFamilyMatched: familyClass.matched,
-    postflopFamilyMatchCount: familyClass.matchCount,
     focusKey: `${street}|${spotType}|${skillBucket}`,
   };
 }
@@ -2879,25 +3000,43 @@ function allSkillsApplyGhostPressure(node, baseline){
 
 function allSkillsApplyFamilyExploitTuning(node, action, reason){
   const familyId = node.postflopFamilyId ?? null;
+  const normalizedTexture = typeof node.boardTexture === 'string'
+    ? node.boardTexture.toLowerCase().replace(/_/g, '-')
+    : 'unknown';
   const pressureTextures = new Set(['semi-wet', 'wet', 'paired']);
   let tunedAction = action;
   let tunedReason = reason;
 
+  const checkedToHeroCalibrationTarget = (familyHint = familyId) => {
+    const texture = normalizedTexture;
+    const isIp = node.heroPos === 'ip';
+
+    if(isIp){
+      if(familyHint === 'turn_pressure') return texture === 'semi-wet' ? 'check' : 'bet-medium';
+      if(familyHint === 'flop_cbet_bluff') return (texture === 'semi-wet' || texture === 'wet') ? 'check' : 'bet-medium';
+      if(texture === 'dry') return 'bet-medium';
+      return 'check';
+    }
+
+    if(texture === 'semi-wet' || texture === 'wet') return 'bet-medium';
+    return 'check';
+  };
+
   if(familyId === 'turn_pressure' && node.street === 'turn' && node.spotType === 'checked_to_hero'){
     if(node.handClass === 'strong' || node.handClass === 'monster'){
-      const target = (node.boardTexture === 'wet' || node.boardTexture === 'monotone') ? 'bet-large' : 'bet-medium';
+      const target = 'bet-medium';
       if(node.options.includes(target) && tunedAction !== target){
         tunedAction = target;
         tunedReason = randItem([
-          `Turn-pressure calibration: strong value lines stay centered on ${target === 'bet-medium' ? 'medium sizing' : 'larger pressure'} for cleaner turn range construction.`,
-          `Turn-pressure calibration: prioritize ${target === 'bet-medium' ? 'medium value' : 'large protection'} so your turn line is less polar and more solver-consistent.`,
-          `Turn-pressure calibration: this hand class performs best with ${target === 'bet-medium' ? 'a medium turn bet' : 'a larger turn bet'} in the calibrated value mix.`
+          `Turn-pressure calibration: strong value lines stay centered on medium sizing for cleaner turn range construction.`,
+          `Turn-pressure calibration: prioritize medium value so your turn line is less polar and more solver-consistent.`,
+          `Turn-pressure calibration: this hand class performs best with a medium turn bet in the calibrated value mix.`
         ]);
       }
     }
 
     if(node.handClass === 'marginal'){
-      const canApplyMediumPressure = node.heroPos === 'oop' && pressureTextures.has(node.boardTexture) && node.options.includes('bet-medium');
+      const canApplyMediumPressure = node.heroPos === 'oop' && pressureTextures.has(normalizedTexture) && node.options.includes('bet-medium');
       const target = canApplyMediumPressure ? 'bet-medium' : 'check';
       if(node.options.includes(target) && tunedAction !== target){
         tunedAction = target;
@@ -2916,8 +3055,8 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
     }
 
     if(node.handClass === 'air'){
-      const dryProbe = node.boardTexture === 'dry' && node.options.includes('bet-small');
-      const pressureProbe = node.heroPos === 'oop' && pressureTextures.has(node.boardTexture) && node.options.includes('bet-medium');
+      const dryProbe = normalizedTexture === 'dry' && node.options.includes('bet-small');
+      const pressureProbe = node.heroPos === 'oop' && pressureTextures.has(normalizedTexture) && node.options.includes('bet-medium');
       const airTarget = dryProbe ? 'bet-small' : pressureProbe ? 'bet-medium' : 'check';
       if(node.options.includes(airTarget) && tunedAction !== airTarget){
         tunedAction = airTarget;
@@ -2928,10 +3067,20 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
         ]);
       }
     }
+
+    const turnPressureTarget = checkedToHeroCalibrationTarget('turn_pressure');
+    if(node.options.includes(turnPressureTarget) && tunedAction !== turnPressureTarget){
+      tunedAction = turnPressureTarget;
+      tunedReason = randItem([
+        `Turn-pressure calibration: position + texture priors now anchor this node to ${turnPressureTarget === 'check' ? 'a check-back/check-through line' : 'a medium pressure bet'} for better solver alignment.`,
+        `Turn-pressure calibration: this branch uses a deterministic ${turnPressureTarget === 'check' ? 'check' : 'bet-medium'} anchor by position and texture to reduce hard conflicts.`,
+        `Turn-pressure calibration: to stabilize this family, ${turnPressureTarget === 'check' ? 'pot-control check frequency' : 'bet-medium pressure frequency'} is promoted as the primary line.`
+      ]);
+    }
   }
 
   if(familyId === 'flop_cbet_bluff' && node.street === 'flop' && node.spotType === 'checked_to_hero'){
-    if(node.handClass === 'draw' && tunedAction === 'bet-large' && node.boardTexture !== 'wet' && node.options.includes('bet-medium')){
+    if(node.handClass === 'draw' && tunedAction === 'bet-large' && normalizedTexture !== 'wet' && node.options.includes('bet-medium')){
       tunedAction = 'bet-medium';
       tunedReason = randItem([
         `Flop c-bet bluff calibration: draws shift from oversized pressure to medium semibluffs on non-wet textures.`,
@@ -2940,7 +3089,7 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
       ]);
     }
 
-    if(node.handClass === 'air' && tunedAction === 'bet-medium' && node.boardTexture === 'dry' && node.options.includes('bet-small')){
+    if(node.handClass === 'air' && tunedAction === 'bet-medium' && normalizedTexture === 'dry' && node.options.includes('bet-small')){
       tunedAction = 'bet-small';
       tunedReason = randItem([
         `Flop c-bet bluff calibration: dry-board air bluffs use small stabs more often than medium barrels.`,
@@ -2949,12 +3098,50 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
       ]);
     }
 
-    if(node.handClass === 'air' && tunedAction === 'check' && node.heroPos === 'oop' && pressureTextures.has(node.boardTexture) && node.options.includes('bet-medium')){
+    if(node.handClass === 'air' && tunedAction === 'check' && node.heroPos === 'oop' && pressureTextures.has(normalizedTexture) && node.options.includes('bet-medium')){
       tunedAction = 'bet-medium';
       tunedReason = randItem([
         `Flop c-bet bluff calibration: OOP pressure textures keep air in a medium c-bet mix instead of pure checks.`,
         `Flop c-bet bluff calibration: avoid over-checking OOP on dynamic boards by adding medium air stabs.`,
         `Flop c-bet bluff calibration: this air branch shifts from check-heavy play to medium probing on pressure textures.`
+      ]);
+    }
+
+    const flopCheckedTarget = checkedToHeroCalibrationTarget('flop_cbet_bluff');
+    if(node.options.includes(flopCheckedTarget) && tunedAction !== flopCheckedTarget){
+      tunedAction = flopCheckedTarget;
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: position + texture priors promote ${flopCheckedTarget === 'check' ? 'checking' : 'bet-medium pressure'} to reduce persistent hard mismatches.`,
+        `Flop c-bet bluff calibration: this node is now anchored to ${flopCheckedTarget === 'check' ? 'a check line' : 'a medium c-bet line'} based on position and texture.`,
+        `Flop c-bet bluff calibration: solver-shadow conflicts are reduced by preferring ${flopCheckedTarget === 'check' ? 'check' : 'bet-medium'} in this positional texture bucket.`
+      ]);
+    }
+  }
+
+  if(familyId === 'flop_cbet_bluff' && node.street === 'turn' && node.spotType === 'checked_to_hero'){
+    const ipSemiWetCheckAnchor = node.heroPos === 'ip'
+      && normalizedTexture === 'semi-wet'
+      && node.options.includes('check');
+
+    if(ipSemiWetCheckAnchor && tunedAction !== 'check'){
+      tunedAction = 'check';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: IP semiwet turn check-through branches stay anchored to check in this continuation family.`,
+        `Flop c-bet bluff calibration: this IP semiwet turn node avoids over-barreling by keeping the primary action as check.`,
+        `Flop c-bet bluff calibration: semiwet IP turn continuations are stabilized around check to reduce persistent turn conflicts.`
+      ]);
+    }
+
+    const ipMonotoneMediumAnchor = node.heroPos === 'ip'
+      && normalizedTexture === 'monotone'
+      && node.options.includes('bet-medium');
+
+    if(ipMonotoneMediumAnchor && tunedAction !== 'bet-medium'){
+      tunedAction = 'bet-medium';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: IP monotone turn branches use bet-medium as the default pressure size instead of over-polarized barrels.`,
+        `Flop c-bet bluff calibration: this monotone IP turn node is centered on bet-medium for cleaner solver alignment.`,
+        `Flop c-bet bluff calibration: monotone IP turn continuations are normalized to bet-medium in this family.`
       ]);
     }
   }
@@ -2963,19 +3150,20 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
     const effectiveEquity = Number.isFinite(node.effectiveEquity) ? node.effectiveEquity : 0;
     const potOdds = Number.isFinite(node.potOdds) ? node.potOdds : 100;
     const nearPrice = effectiveEquity + 6 >= potOdds;
+    const stackLeftBb = Number.isFinite(node.stackLeftBb) ? node.stackLeftBb : null;
     const semibluffPressureReady = node.handClass === 'draw'
       && node.heroPos === 'oop'
-      && pressureTextures.has(node.boardTexture)
+      && pressureTextures.has(normalizedTexture)
       && node.sizeBucket !== 'large'
-      && node.options.includes('raise-large')
+      && node.options.includes('raise-small')
       && (effectiveEquity + 11 >= potOdds);
 
-    if(semibluffPressureReady && tunedAction !== 'raise-large'){
-      tunedAction = 'raise-large';
+    if(semibluffPressureReady && tunedAction !== 'raise-small'){
+      tunedAction = 'raise-small';
       tunedReason = randItem([
-        `Flop c-bet bluff calibration: OOP draw branches on pressure textures keep a large semibluff raise in mix when equity is close to price.`,
-        `Flop c-bet bluff calibration: this draw is close enough to price to prefer an aggressive raise-large semibluff OOP.`,
-        `Flop c-bet bluff calibration: dynamic OOP facing-bet spots keep draw aggression with raise-large instead of passive defend/fold.`
+        `Flop c-bet bluff calibration: OOP draw branches on pressure textures keep a small semibluff raise in mix when equity is close to price.`,
+        `Flop c-bet bluff calibration: this draw is close enough to price to prefer an aggressive raise-small semibluff OOP.`,
+        `Flop c-bet bluff calibration: dynamic OOP facing-bet spots keep draw aggression with raise-small instead of passive defend/fold.`
       ]);
     }
 
@@ -2994,6 +3182,208 @@ function allSkillsApplyFamilyExploitTuning(node, action, reason){
         `Flop c-bet bluff calibration: pure air folds more often facing aggression in this branch.`,
         `Flop c-bet bluff calibration: remove low-realization air continues versus bets.`,
         `Flop c-bet bluff calibration: air should not over-defend in this facing-bet node.`
+      ]);
+    }
+
+    const recoverFoldToCall = tunedAction === 'fold'
+      && node.options.includes('call')
+      && node.heroPos === 'ip'
+      && normalizedTexture === 'semi-wet'
+      && nearPrice;
+
+    if(recoverFoldToCall){
+      tunedAction = 'call';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: near-price IP semiwet defenses recover from fold to call for better solver consistency.`,
+        `Flop c-bet bluff calibration: this semiwet IP node keeps a call line when equity is near required price.`,
+        `Flop c-bet bluff calibration: fold is softened to call in near-price IP semiwet branches.`
+      ]);
+    }
+
+    const rescueTurnOopSemiWetFold = tunedAction === 'fold'
+      && node.street === 'turn'
+      && node.heroPos === 'oop'
+      && normalizedTexture === 'semi-wet'
+      && node.handClass !== 'air';
+
+    if(rescueTurnOopSemiWetFold){
+      const shallowStack = Number.isFinite(node.stackLeftBb) && node.stackLeftBb <= 55;
+      if(shallowStack && node.options.includes('call')){
+        tunedAction = 'call';
+        tunedReason = randItem([
+          `Flop c-bet bluff calibration: shallow-stack OOP semiwet turn defense prefers call over over-folding this branch.`,
+          `Flop c-bet bluff calibration: with reduced stack depth, this OOP semiwet turn node defends by calling instead of folding.`,
+          `Flop c-bet bluff calibration: shallow stacks keep this OOP semiwet turn continue line as a call.`
+        ]);
+      } else if(node.sizeBucket !== 'large' && node.options.includes('raise-small')){
+        tunedAction = 'raise-small';
+        tunedReason = randItem([
+          `Flop c-bet bluff calibration: deeper OOP semiwet turn branches retain raise-small pressure instead of over-folding.`,
+          `Flop c-bet bluff calibration: this OOP semiwet turn node keeps an aggressive raise-small continue at deeper stacks.`,
+          `Flop c-bet bluff calibration: avoid fold-heavy defense here by restoring raise-small pressure OOP on semiwet turns.`
+        ]);
+      } else if(node.options.includes('call')){
+        tunedAction = 'call';
+        tunedReason = randItem([
+          `Flop c-bet bluff calibration: this OOP semiwet turn branch defends by calling when raise-small is unavailable.`,
+          `Flop c-bet bluff calibration: semiwet OOP turn defense keeps a call continue instead of pure folding.`,
+          `Flop c-bet bluff calibration: fallback continue here is call to reduce hard fold mismatches.`
+        ]);
+      }
+    }
+
+    const rescueTurnIpPressureFold = tunedAction === 'fold'
+      && node.street === 'turn'
+      && node.heroPos === 'ip'
+      && (normalizedTexture === 'paired' || normalizedTexture === 'dry')
+      && node.handClass !== 'air'
+      && node.sizeBucket !== 'large'
+      && node.options.includes('raise-small');
+
+    if(rescueTurnIpPressureFold){
+      tunedAction = 'raise-small';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: IP turn pressure buckets on paired/dry boards keep raise-small in mix instead of folding.`,
+        `Flop c-bet bluff calibration: paired/dry IP turn defenses are re-anchored to raise-small rather than over-folding.`,
+        `Flop c-bet bluff calibration: this IP paired/dry turn node promotes raise-small to reduce fold-heavy hard conflicts.`
+      ]);
+    }
+
+    const flopIpSemiWetCallAnchor = node.street === 'flop'
+      && node.heroPos === 'ip'
+      && normalizedTexture === 'semi-wet'
+      && tunedAction === 'fold'
+      && node.options.includes('call');
+
+    if(flopIpSemiWetCallAnchor){
+      tunedAction = 'call';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: IP semiwet flop defenses recover fold-heavy lines into calls for better mixed-frequency alignment.`,
+        `Flop c-bet bluff calibration: this IP semiwet flop bucket keeps call as the primary continue line versus pressure.`,
+        `Flop c-bet bluff calibration: semiwet IP flop defenses are anchored toward call instead of over-folding.`
+      ]);
+    }
+
+    const flopOopWetCallAnchor = node.street === 'flop'
+      && node.heroPos === 'oop'
+      && normalizedTexture === 'wet'
+      && node.options.includes('call')
+      && tunedAction !== 'call';
+
+    if(flopOopWetCallAnchor){
+      tunedAction = 'call';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: OOP wet flop defenses keep a call continue instead of over-folding this high-equity branch.`,
+        `Flop c-bet bluff calibration: this wet OOP flop node is re-anchored to call for solver-consistent defense frequencies.`,
+        `Flop c-bet bluff calibration: wet OOP flop pressure spots continue by calling more often in this family.`
+      ]);
+    }
+
+    const turnIpSemiWetAnchor = node.street === 'turn'
+      && node.heroPos === 'ip'
+      && normalizedTexture === 'semi-wet';
+
+    if(turnIpSemiWetAnchor){
+      const shallowStack = Number.isFinite(stackLeftBb) && stackLeftBb <= 25;
+      const target = shallowStack ? 'fold' : 'call';
+      if(node.options.includes(target) && tunedAction !== target){
+        tunedAction = target;
+        tunedReason = randItem([
+          target === 'fold'
+            ? `Flop c-bet bluff calibration: shallow-stack IP semiwet turn branches keep fold as the low-EV continue cap.`
+            : `Flop c-bet bluff calibration: deeper-stack IP semiwet turn branches shift to call over fold-heavy defense.`,
+          target === 'fold'
+            ? `Flop c-bet bluff calibration: at shallow depth this IP semiwet turn node avoids over-defending and folds.`
+            : `Flop c-bet bluff calibration: this IP semiwet turn bucket stabilizes around call at practical stack depths.`,
+          target === 'fold'
+            ? `Flop c-bet bluff calibration: shallow IP semiwet turn spots keep a disciplined fold baseline.`
+            : `Flop c-bet bluff calibration: semiwet IP turn continuations are anchored to call once stack depth supports defense.`
+        ]);
+      }
+    }
+
+    const turnIpRaiseSmallAnchor = node.street === 'turn'
+      && node.heroPos === 'ip'
+      && (normalizedTexture === 'paired' || normalizedTexture === 'dry' || normalizedTexture === 'monotone')
+      && node.sizeBucket !== 'large'
+      && node.options.includes('raise-small');
+
+    if(turnIpRaiseSmallAnchor && tunedAction !== 'raise-small'){
+      tunedAction = 'raise-small';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: IP turn pressure buckets on paired/dry/monotone textures are anchored to raise-small.`,
+        `Flop c-bet bluff calibration: this IP turn texture bucket keeps raise-small as the primary pressure response.`,
+        `Flop c-bet bluff calibration: paired, dry, and monotone IP turn defenses promote raise-small to reduce soft drift.`
+      ]);
+    }
+
+    const turnOopFoldAnchor = node.street === 'turn'
+      && node.heroPos === 'oop'
+      && (normalizedTexture === 'paired' || normalizedTexture === 'monotone')
+      && node.options.includes('fold')
+      && tunedAction !== 'fold';
+
+    if(turnOopFoldAnchor){
+      tunedAction = 'fold';
+      tunedReason = randItem([
+        `Flop c-bet bluff calibration: OOP paired/monotone turn defense buckets stay anchored to fold in this family.`,
+        `Flop c-bet bluff calibration: this OOP paired/monotone turn node trims over-calls and over-raises back to fold.`,
+        `Flop c-bet bluff calibration: paired and monotone OOP turn pressure is handled with a fold anchor here.`
+      ]);
+    }
+
+    const turnOopSemiWetAnchor = node.street === 'turn'
+      && node.heroPos === 'oop'
+      && normalizedTexture === 'semi-wet';
+
+    if(turnOopSemiWetAnchor){
+      const shallowStack = Number.isFinite(stackLeftBb) && stackLeftBb <= 45;
+      const target = shallowStack
+        ? 'call'
+        : (node.sizeBucket !== 'large' && node.options.includes('raise-small') ? 'raise-small' : 'call');
+      if(node.options.includes(target) && tunedAction !== target){
+        tunedAction = target;
+        tunedReason = randItem([
+          target === 'call'
+            ? `Flop c-bet bluff calibration: shallow OOP semiwet turn branches keep call as the preferred continue.`
+            : `Flop c-bet bluff calibration: deeper OOP semiwet turn branches keep raise-small as the pressure line.`,
+          target === 'call'
+            ? `Flop c-bet bluff calibration: this OOP semiwet turn node avoids over-aggression at shallow stack depth by calling.`
+            : `Flop c-bet bluff calibration: semiwet OOP turn pressure scales up to raise-small once stacks are deeper.`,
+          target === 'call'
+            ? `Flop c-bet bluff calibration: shallow-stack semiwet OOP defense is anchored to call in this bucket.`
+            : `Flop c-bet bluff calibration: deeper semiwet OOP turn defense is anchored to raise-small for consistency.`
+        ]);
+      }
+    }
+  }
+
+  if(familyId === 'flop_draw_defense' && node.street === 'flop' && node.spotType === 'facing_bet'){
+    const ipSemiWetCallAnchor = node.heroPos === 'ip'
+      && normalizedTexture === 'semi-wet'
+      && tunedAction === 'fold'
+      && node.options.includes('call');
+
+    if(ipSemiWetCallAnchor){
+      tunedAction = 'call';
+      tunedReason = randItem([
+        `Flop draw-defense calibration: IP semiwet flop draw branches keep call as the default continue instead of folding too often.`,
+        `Flop draw-defense calibration: this IP semiwet draw-defense node shifts fold-heavy outcomes back to call.`,
+        `Flop draw-defense calibration: semiwet IP draw-defense frequencies are stabilized around call.`
+      ]);
+    }
+
+    const oopWetCallAnchor = node.heroPos === 'oop'
+      && normalizedTexture === 'wet'
+      && tunedAction === 'fold'
+      && node.options.includes('call');
+
+    if(oopWetCallAnchor){
+      tunedAction = 'call';
+      tunedReason = randItem([
+        `Flop draw-defense calibration: OOP wet flop draw-defense branches retain call rather than over-folding high-equity continues.`,
+        `Flop draw-defense calibration: this wet OOP draw-defense node is anchored to call for solver-consistent defense.`,
+        `Flop draw-defense calibration: wet OOP draw-defense frequencies are corrected toward call in this bucket.`
       ]);
     }
   }
@@ -3190,7 +3580,119 @@ function allSkillsScoreAction(node, action){
   else if(isAcceptable) reason = `Decision: ${actionLabel} is an acceptable alternative in this spot, even if not the highest-EV line. Principle: ${node.baseline.reason} Exploit note: best line was ${exploitLabel}. ${node.exploit.reason}`;
   else reason = `Decision: ${actionLabel} was not optimal. Principle: ${node.baseline.reason} Exploit note: best line was ${exploitLabel}. ${node.exploit.reason}`;
 
-  return {action, isCorrect, score, reason, bestAction: exploit, baselineAction: baseline, acceptableActions, skillTag: `${node.street}|${node.spotType}|${node.skillBucket}`};
+  return {
+    action,
+    isCorrect,
+    score,
+    reason,
+    bestAction: exploit,
+    baselineAction: baseline,
+    acceptableActions,
+    skillTag: `${node.street}|${node.spotType}|${node.skillBucket}`,
+    scoreSource: 'heuristic',
+    solverCovered: false,
+  };
+}
+
+async function allSkillsScoreActionWithSolver(node, meta, action, options = {}){
+  const heuristicScored = allSkillsScoreAction(node, action);
+  const solverScoringEnabled = options.solverScoringEnabled === true;
+  const solverThresholdProfile = getSolverThresholdProfileKey(options.solverThresholdProfile);
+  const solverThresholds = getSolverThresholdsForProfile(solverThresholdProfile, options.solverThresholds);
+  const eligible = solverScoringEnabled && isSolverEligibleNode(node);
+  if(!eligible){
+    return {
+      scored: heuristicScored,
+      shadowScored: heuristicScored,
+      usedSolverScoring: false,
+      solverCovered: false,
+      spotKey: null,
+    };
+  }
+
+  const spotKey = buildCanonicalSpotKey(node, meta);
+  const lookupSolverDecision = typeof options.lookupSolverDecision === 'function'
+    ? options.lookupSolverDecision
+    : lookupSolverDecisionBySpotKey;
+
+  try {
+    const solverDecision = await lookupSolverDecision(spotKey);
+    const frequencies = solverDecision?.frequencies;
+
+    if(!frequencies || typeof frequencies !== 'object'){
+      return {
+        scored: {
+          ...heuristicScored,
+          scoreSource: 'heuristic_uncovered',
+          solverCovered: false,
+          solverSpotKey: spotKey,
+          reason: `${heuristicScored.reason} Solver coverage is unavailable for this exact spot, so heuristic grading was used.`,
+        },
+        shadowScored: heuristicScored,
+        usedSolverScoring: false,
+        solverCovered: false,
+        spotKey,
+      };
+    }
+
+    const solverBestAction = selectBestAction(frequencies) ?? heuristicScored.bestAction;
+    const actionGrade = gradeActionByFrequency(action, frequencies, solverThresholds);
+    const baselineAction = node.baseline?.action ?? heuristicScored.baselineAction;
+    const baselineFrequency = Number(frequencies?.[baselineAction] ?? 0);
+    const actionFrequency = Number(frequencies?.[action] ?? 0);
+    const bestFrequency = Number(frequencies?.[solverBestAction] ?? 0);
+    const acceptableActions = (Array.isArray(node.options) ? node.options : [])
+      .filter(candidate => candidate !== solverBestAction)
+      .filter(candidate => gradeActionByFrequency(candidate, frequencies, solverThresholds).category === 'acceptable');
+
+    const actionLabel = allSkillsActionLabel(action);
+    const bestLabel = allSkillsActionLabel(solverBestAction);
+    const baselineLabel = allSkillsActionLabel(baselineAction);
+
+    let reason = '';
+    if(actionGrade.category === 'best'){
+      reason = `Decision: ${actionLabel}. Solver line: this is the highest-frequency action in this covered spot (${allSkillsFormatPercent(actionFrequency)}). Baseline note: ${node.baseline.reason}`;
+    } else if(actionGrade.category === 'acceptable'){
+      reason = `Decision: ${actionLabel} is solver-acceptable in this covered mixed strategy spot (${allSkillsFormatPercent(actionFrequency)}). Highest-frequency line is ${bestLabel} (${allSkillsFormatPercent(bestFrequency)}). Baseline note: ${node.baseline.reason}`;
+    } else {
+      reason = `Decision: ${actionLabel} is below solver threshold (${allSkillsFormatPercent(actionFrequency)}). Highest-frequency line is ${bestLabel} (${allSkillsFormatPercent(bestFrequency)}), while baseline ${baselineLabel} appears ${allSkillsFormatPercent(baselineFrequency)}.`;
+    }
+
+    return {
+      scored: {
+        ...heuristicScored,
+        isCorrect: actionGrade.category !== 'incorrect',
+        score: actionGrade.score,
+        reason,
+        bestAction: solverBestAction,
+        baselineAction,
+        acceptableActions,
+        scoreSource: 'solver_covered',
+        solverCovered: true,
+        solverSpotKey: spotKey,
+        solverCategory: actionGrade.category,
+        solverThresholdProfile,
+      },
+      shadowScored: heuristicScored,
+      usedSolverScoring: true,
+      solverCovered: true,
+      spotKey,
+    };
+  } catch {
+    return {
+      scored: {
+        ...heuristicScored,
+        scoreSource: 'heuristic_error',
+        solverCovered: false,
+        solverSpotKey: spotKey,
+        reason: `${heuristicScored.reason} Solver lookup failed, so heuristic grading was used for this action.`,
+      },
+      shadowScored: heuristicScored,
+      usedSolverScoring: false,
+      solverCovered: false,
+      spotKey,
+    };
+  }
 }
 
 function allSkillsActionCommit(node, action){
@@ -3277,6 +3779,7 @@ function allSkillsResolve(meta, node, scored, fatalInfo){
     reason: scored.reason,
     bestAction: scored.bestAction,
     baselineAction: scored.baselineAction,
+    scoreSource: scored.scoreSource ?? 'heuristic',
     fatal: fatalInfo.isFatal,
     fatalCode: fatalInfo.code,
     fatalReason: fatalInfo.message,
@@ -3494,11 +3997,15 @@ function AllSkillsTab(){
   const [streak, setStreak] = useLocalStorageState(AS_STREAK_KEY, 0);
   const [best, setBest] = useLocalStorageState(AS_BEST_KEY, 0);
   const [examMode, setExamMode] = useLocalStorageState(AS_EXAM_KEY, false);
-  const [, setSolverShadowRefreshNonce] = useState(0);
+  const solverScoringEnabled = true;
+  const solverThresholdProfileKey = getSolverThresholdProfileKey('standard');
+  const solverThresholds = getSolverThresholdsForProfile(solverThresholdProfileKey);
+  const [solverScoringPending, setSolverScoringPending] = useState(false);
   const [fade, setFade] = useState(true);
   const [positionMapOpen, setPositionMapOpen] = useState(false);
   const [showMathHint, setShowMathHint] = useState(true);
   const lastFeedbackReasonRef = useRef('');
+  const actionLockRef = useRef(false);
 
   const init = () => {
     const m = createAllSkillsHandMeta(weakness);
@@ -3516,6 +4023,32 @@ function AllSkillsTab(){
   }, [positionMapOpen]);
 
   useEffect(() => {
+    const onKeyDown = (e) => {
+      if(positionMapOpen) return;
+      if(e.defaultPrevented) return;
+      if(e.ctrlKey || e.metaKey || e.altKey) return;
+      if(e.repeat) return;
+      if(allSkillsIsEditableTarget(e.target)) return;
+
+      if(state.result){
+        if(e.key === 'Enter' && !allSkillsIsNativeEnterTarget(e.target)){
+          e.preventDefault();
+          next();
+        }
+        return;
+      }
+
+      const shortcutAction = allSkillsShortcutActionFromKey(e.key, state.node.options);
+      if(!shortcutAction) return;
+      e.preventDefault();
+      act(shortcutAction);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [positionMapOpen, state.result, state.node.options, solverScoringEnabled, solverScoringPending]);
+
+  useEffect(() => {
     setPositionMapOpen(false);
     lastFeedbackReasonRef.current = '';
   }, [state.meta.id]);
@@ -3524,12 +4057,7 @@ function AllSkillsTab(){
   const boardNow = state.meta.boardCards.slice(0, revealBoardCount);
   const summary = state.meta.ended ? allSkillsSummarize(state.meta) : null;
 
-  const act = (action) => {
-    if(state.result) return;
-    if(!state.node.options.includes(action)) return;
-
-    const scoredBase = allSkillsScoreAction(state.node, action);
-    const fatalInfo = allSkillsDetectFatal(state.node, action);
+  const applyActionOutcome = (scoredBase, fatalInfo, shadowScored = scoredBase) => {
     let scored = fatalInfo.isFatal
       ? {...scoredBase, isCorrect: false, score: 0, reason: `${fatalInfo.message} ${scoredBase.reason}`}
       : scoredBase;
@@ -3539,7 +4067,10 @@ function AllSkillsTab(){
     }
     lastFeedbackReasonRef.current = scored.reason;
 
-    allSkillsQueueSolverShadow(state.meta, state.node, scored);
+    allSkillsQueueSolverShadow(state.meta, state.node, shadowScored, {
+      thresholds: solverThresholds,
+      thresholdProfile: solverThresholdProfileKey,
+    });
 
     const resolved = allSkillsResolve(state.meta, state.node, scored, fatalInfo);
     const isCorrect = scored.isCorrect && !resolved.fatal;
@@ -3588,6 +4119,43 @@ function AllSkillsTab(){
     }));
   };
 
+  const act = (action) => {
+    if(state.result) return;
+    if(actionLockRef.current) return;
+    if(!state.node.options.includes(action)) return;
+
+    const fatalInfo = allSkillsDetectFatal(state.node, action);
+
+    const solverEligible = solverScoringEnabled && isSolverEligibleNode(state.node) && !fatalInfo.isFatal;
+    if(!solverEligible){
+      const scoredBase = allSkillsScoreAction(state.node, action);
+      applyActionOutcome(scoredBase, fatalInfo, scoredBase);
+      return;
+    }
+
+    actionLockRef.current = true;
+    setSolverScoringPending(true);
+
+    allSkillsScoreActionWithSolver(state.node, state.meta, action, {
+      solverScoringEnabled: true,
+      solverThresholdProfile: solverThresholdProfileKey,
+      solverThresholds,
+    })
+      .then(({scored, shadowScored}) => {
+        const scoredBase = scored ?? allSkillsScoreAction(state.node, action);
+        const shadowBase = shadowScored ?? scoredBase;
+        applyActionOutcome(scoredBase, fatalInfo, shadowBase);
+      })
+      .catch(() => {
+        const fallback = allSkillsScoreAction(state.node, action);
+        applyActionOutcome(fallback, fatalInfo, fallback);
+      })
+      .finally(() => {
+        actionLockRef.current = false;
+        setSolverScoringPending(false);
+      });
+  };
+
   const next = () => {
     setFade(false);
     setTimeout(() => {
@@ -3603,17 +4171,6 @@ function AllSkillsTab(){
 
   const showImmediate = !examMode || state.result?.ended;
   const coachTip = allSkillsBuildCoachTip(weakness);
-  const solverShadowReport = allSkillsReadSolverShadowReport();
-  const solverShadowSummary = solverShadowReport?.summary ?? null;
-  const solverShadowReadiness = solverShadowReport?.readiness ?? null;
-  const solverShadowMetrics = solverShadowReadiness?.metrics ?? null;
-  const solverShadowBlockers = Array.isArray(solverShadowReadiness?.blockers)
-    ? solverShadowReadiness.blockers
-    : [];
-  const clearShadowCalibration = () => {
-    allSkillsClearSolverShadowData();
-    setSolverShadowRefreshNonce((value) => value + 1);
-  };
   const villainName = state.meta.villainModel.name;
   const villainHint = allSkillsVillainHint(state.meta.villainType);
   const showFacingBetMath = state.node.spotType === 'facing_bet' && (examMode ? !!state.result : showMathHint);
@@ -3654,6 +4211,9 @@ function AllSkillsTab(){
     setPositionMapOpen(true);
   };
   const situationText = allSkillsBuildSituationText(state.node, state.meta, heroSeat, villainSeat, villainName);
+  const scoringSourceLabel = state.result ? allSkillsScoringSourceLabel(state.result.scoreSource) : '';
+  const gtoTrack = state.result ? allSkillsBuildGtoFeedbackTrack(state.result, state.node, solverScoringEnabled) : null;
+  const exploitTrack = state.result ? allSkillsBuildExploitFeedbackTrack(state.node) : null;
 
   return (
     <div>
@@ -3671,49 +4231,6 @@ function AllSkillsTab(){
           </button>
           <button onClick={()=>setExamMode(v=>!v)} style={{padding:'7px 10px',borderRadius:8,border:'1px solid rgba(140,170,140,0.32)',background:'rgba(0,0,0,0.2)',color:'#8ab880',cursor:'pointer',fontSize:11,fontFamily:'sans-serif'}}>Toggle Exam</button>
         </div>
-      </div>
-
-      <div style={{marginBottom:12,background:'rgba(0,0,0,0.2)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:12,padding:'12px 16px',fontFamily:'sans-serif'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap'}}>
-          <div style={{fontSize:9,color:'#2e4a2c',letterSpacing:3,textTransform:'uppercase'}}>Solver Shadow Status</div>
-          <button
-            onClick={clearShadowCalibration}
-            style={{padding:'6px 10px',borderRadius:8,border:'1px solid rgba(200,140,70,0.34)',background:'rgba(120,70,30,0.18)',color:'#d8a878',cursor:'pointer',fontSize:10,fontFamily:'sans-serif'}}
-          >
-            Reset calibration data
-          </button>
-        </div>
-
-        {!solverShadowReport ? (
-          <div style={{fontSize:11,color:'#7fa37a',lineHeight:1.45}}>
-            No shadow report yet. Play a few solver-eligible hands (heads-up flop/turn) to start collecting coverage and mismatch stats. If coverage expansion is needed later, additional solver artifacts come from the external solver pipeline (not generated in this repo).
-          </div>
-        ) : (
-          <>
-            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}}>
-              <span style={{background:'rgba(70,120,120,0.15)',border:'1px solid rgba(70,120,120,0.32)',color:'#78a8a8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>Samples {solverShadowMetrics?.sampleCount ?? solverShadowSummary?.total ?? 0}</span>
-              <span style={{background:'rgba(90,150,80,0.14)',border:'1px solid rgba(90,150,80,0.32)',color:'#8fbe86',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>Covered {allSkillsFormatPercent(solverShadowMetrics?.coveredRate ?? 0)}</span>
-              <span style={{background:'rgba(170,120,70,0.15)',border:'1px solid rgba(170,120,70,0.32)',color:'#d0a070',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>Uncovered {allSkillsFormatPercent(solverShadowMetrics?.uncoveredRate ?? 0)}</span>
-              <span style={{background:'rgba(120,90,150,0.18)',border:'1px solid rgba(140,110,180,0.34)',color:'#b5a8d8',padding:'3px 10px',borderRadius:20,fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>Hard mismatch {allSkillsFormatPercent(solverShadowMetrics?.hardMismatchRate ?? 0)}</span>
-            </div>
-
-            <div style={{fontSize:11,color:'#7fa37a',lineHeight:1.5,marginBottom:4}}>
-              Promotion gate: <span style={{color:solverShadowReadiness?.ready ? '#73c273' : '#d9a24a',fontWeight:700}}>{solverShadowReadiness?.ready ? 'READY' : 'BLOCKED'}</span>
-              {' '}· Soft mismatch {allSkillsFormatPercent(solverShadowMetrics?.softMismatchRate ?? 0)}
-              {' '}· Agreement {allSkillsFormatPercent(solverShadowMetrics?.agreementRate ?? 0)}
-            </div>
-
-            {solverShadowBlockers.length > 0 && (
-              <div style={{fontSize:11,color:'#c89a62',lineHeight:1.45}}>
-                Blockers: {solverShadowBlockers.join(' ')}
-              </div>
-            )}
-
-            <div style={{fontSize:10,color:'#7fa37a',lineHeight:1.45,marginTop:6}}>
-              Next step: run fresh 150-200 hand calibration windows after each tuning pass. If uncovered clusters remain, import targeted solver artifacts from the external pipeline (not generated in this repo).
-            </div>
-          </>
-        )}
       </div>
 
       {weakPostflopFamily && weakPostflopFamilyAcc !== null && weakPostflopFamilyAcc < 85 && (
@@ -3801,14 +4318,32 @@ function AllSkillsTab(){
 
         {!state.result ? (
           <>
-            <div style={{textAlign:'center',fontSize:12,color:'#507848',marginBottom:11,fontFamily:'sans-serif'}}>Choose your action</div>
+            <div style={{textAlign:'center',fontSize:12,color:'#507848',marginBottom:11,fontFamily:'sans-serif'}}>
+              {solverScoringPending ? 'Grading with solver data...' : 'Choose your action'}
+            </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-              {state.node.options.map(opt => (
-                <button key={opt} onClick={()=>act(opt)} style={{padding:'12px 10px',borderRadius:10,border:'1px solid rgba(90,150,90,0.2)',cursor:'pointer',background:'rgba(0,0,0,0.2)',color:'#8ab880',fontFamily:'sans-serif',textAlign:'left'}}>
-                  <div style={{fontSize:13,fontWeight:700}}>{allSkillsActionLabel(opt)}</div>
-                  <div style={{fontSize:10,color:'#507848'}}>{allSkillsSizeBucket(opt) ?? 'standard'}</div>
-                </button>
-              ))}
+              {state.node.options.map((opt, index) => {
+                const shortcutHint = index < AS_MAX_SHORTCUT_ACTIONS ? String(index + 1) : null;
+                return (
+                  <button
+                    key={opt}
+                    onClick={()=>act(opt)}
+                    disabled={solverScoringPending}
+                    style={{padding:'12px 10px',borderRadius:10,border:'1px solid rgba(90,150,90,0.2)',cursor:solverScoringPending?'not-allowed':'pointer',opacity:solverScoringPending?0.6:1,background:'rgba(0,0,0,0.2)',color:'#8ab880',fontFamily:'sans-serif',textAlign:'left'}}
+                    title={shortcutHint ? `Shortcut: ${shortcutHint}` : undefined}
+                  >
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+                      <div style={{fontSize:13,fontWeight:700}}>{allSkillsActionLabel(opt)}</div>
+                      {shortcutHint && (
+                        <span style={{fontSize:10,color:'#9bc892',padding:'1px 6px',borderRadius:999,border:'1px solid rgba(155,200,146,0.35)',background:'rgba(90,150,80,0.12)'}}>
+                          {shortcutHint}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{fontSize:10,color:'#507848'}}>{allSkillsSizeBucket(opt) ?? 'standard'}</div>
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : (
@@ -3829,9 +4364,22 @@ function AllSkillsTab(){
             {showImmediate && (
               <div style={{background:'rgba(0,0,0,0.22)',borderRadius:10,padding:'14px 16px',marginBottom:12}}>
                 <div style={{fontSize:9,color:'#3a6038',letterSpacing:3,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:8}}>Feedback</div>
-                <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6,marginBottom:8}}>{state.result.reason}</div>
+                <div style={{fontSize:13,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.6,marginBottom:10}}>{state.result.reason}</div>
+                <div style={{display:'grid',gap:8,marginBottom:8}}>
+                  <div style={{background:'rgba(40,75,55,0.22)',border:'1px solid rgba(90,150,90,0.2)',borderRadius:8,padding:'9px 10px'}}>
+                    <div style={{fontSize:9,color:'#5f8f64',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:4}}>{gtoTrack?.title ?? 'GTO Correctness'}</div>
+                    <div style={{fontSize:11,color:'#a0c890',fontFamily:'sans-serif',lineHeight:1.5}}>{gtoTrack?.detail ?? 'No GTO track available.'}</div>
+                  </div>
+                  <div style={{background:'rgba(70,60,30,0.2)',border:'1px solid rgba(170,140,70,0.24)',borderRadius:8,padding:'9px 10px'}}>
+                    <div style={{fontSize:9,color:'#b89b5e',letterSpacing:2,textTransform:'uppercase',fontFamily:'sans-serif',marginBottom:4}}>{exploitTrack?.title ?? 'Exploit Adjustment'}</div>
+                    <div style={{fontSize:11,color:'#d6bf86',fontFamily:'sans-serif',lineHeight:1.5}}>{exploitTrack?.detail ?? 'No exploit track available.'}</div>
+                  </div>
+                </div>
                 <div style={{fontSize:10,color:'#70946b',fontFamily:'sans-serif'}}>Skill tag: {state.result.skillTag}</div>
                 <div style={{fontSize:10,color:'#88aa84',fontFamily:'sans-serif',marginTop:4}}>Focus area: {allSkillsSkillTagFocus(state.result.skillTag)}</div>
+                <div style={{fontSize:10,color:'#88aa84',fontFamily:'sans-serif',marginTop:4}}>
+                  Scoring source: {scoringSourceLabel}
+                </div>
               </div>
             )}
 
@@ -3917,6 +4465,7 @@ export const __testables = {
   allSkillsEstimateEquity,
   allSkillsDetectFatal,
   allSkillsScoreAction,
+  allSkillsScoreActionWithSolver,
   allSkillsActionCommit,
   allSkillsNextPot,
   allSkillsActiveOpponents,

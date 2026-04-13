@@ -107,3 +107,57 @@ describe('PokerTrainer smoke checks', () => {
     expect(persistedStats.total).toBe(1);
   });
 });
+
+describe('All Skills keyboard shortcuts', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('maps number keys to visible action order', async () => {
+    render(<PokerTrainer />);
+
+    expect(screen.getByText(/Choose your action/i)).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1' });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /(Continue|Next Hand)/i })).toBeInTheDocument();
+    });
+  });
+
+  it('uses Enter to Continue or Next Hand after a decision', async () => {
+    render(<PokerTrainer />);
+
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /(Continue|Next Hand)/i })).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(window, { key: 'Enter', code: 'Enter' });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Choose your action/i)).toBeInTheDocument();
+    });
+  });
+
+  it('does not trigger action shortcuts while position map is open', () => {
+    render(<PokerTrainer />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Position Map/i }));
+    expect(screen.getByRole('dialog', { name: /Expanded Position Map/i })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1' });
+
+    expect(screen.getByText(/Choose your action/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /(Continue|Next Hand)/i })).not.toBeInTheDocument();
+  });
+
+  it('ignores modified shortcut keys', () => {
+    render(<PokerTrainer />);
+
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1', ctrlKey: true });
+
+    expect(screen.getByText(/Choose your action/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /(Continue|Next Hand)/i })).not.toBeInTheDocument();
+  });
+});
