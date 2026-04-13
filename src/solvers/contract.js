@@ -7,6 +7,23 @@ const DEFAULT_SOLVER_THRESHOLDS = Object.freeze({
   acceptableScore: 0.65,
 });
 
+const DEFAULT_SOLVER_THRESHOLD_PROFILE = "standard";
+const SOLVER_THRESHOLD_PROFILES = Object.freeze({
+  beginner: Object.freeze({
+    bestMin: 0.45,
+    acceptableMin: 0.12,
+    acceptableScore: 0.7,
+  }),
+  standard: Object.freeze({
+    ...DEFAULT_SOLVER_THRESHOLDS,
+  }),
+  advanced: Object.freeze({
+    bestMin: 0.58,
+    acceptableMin: 0.18,
+    acceptableScore: 0.6,
+  }),
+});
+
 const STACK_BUCKETS_BB = Object.freeze([20, 40, 60, 80, 100, 120, 150, 200]);
 
 const BET_SIZE_ANCHORS = Object.freeze([
@@ -78,6 +95,19 @@ export function getAllowedActionsForSpot(spotType){
   if(normalized === "checked_to_hero") return CHECKED_TO_HERO_ACTIONS;
   if(normalized === "facing_bet") return FACING_BET_ACTIONS;
   return [...VALID_ACTIONS].sort();
+}
+
+export function getSolverThresholdProfileKey(profile){
+  const token = sanitizeToken(profile);
+  return SOLVER_THRESHOLD_PROFILES[token] ? token : DEFAULT_SOLVER_THRESHOLD_PROFILE;
+}
+
+export function getSolverThresholdsForProfile(profile, overrides = null){
+  const key = getSolverThresholdProfileKey(profile);
+  return {
+    ...SOLVER_THRESHOLD_PROFILES[key],
+    ...(overrides && typeof overrides === "object" ? overrides : {}),
+  };
 }
 
 export function isSolverEligibleNode(node){
@@ -283,4 +313,6 @@ export {
   CHECKED_TO_HERO_ACTIONS,
   FACING_BET_ACTIONS,
   DEFAULT_SOLVER_THRESHOLDS,
+  DEFAULT_SOLVER_THRESHOLD_PROFILE,
+  SOLVER_THRESHOLD_PROFILES,
 };
